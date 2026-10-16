@@ -26,7 +26,7 @@ const catalog = [
   { name: 'You.com', url: 'https://you.com', accent: '#235ce1', accent2: '#5b85f0', logo: 'assets/logos/you-com.ico', defaultOn: false },
   { name: 'Z.ai', url: 'https://chat.z.ai', accent: '#5b6bff', accent2: '#9aa5ff', logo: 'assets/logos/z-ai.png', defaultOn: false },
   { name: 'Pi', url: 'https://pi.ai', accent: '#7b3ff2', accent2: '#b07cf7', logo: 'assets/logos/pi.png', defaultOn: false },
-  { name: 'DiDI', url: 'https://chat.nexio.ovh', accent: '#3aa14d', accent2: '#7bd389', logo: 'assets/logos/didi.png', defaultOn: true },
+  { name: 'DiDi', url: 'https://chat.nexio.ovh', accent: '#3aa14d', accent2: '#7bd389', logo: 'assets/logos/didi.png', defaultOn: true },
 ];
 
 function list() {

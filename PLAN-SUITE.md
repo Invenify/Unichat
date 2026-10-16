@@ -22,7 +22,7 @@ MVP complet + finitions. Tout est committé sur `main`. Dernier commit :
 - **Catalogue** (`src/main/catalog.js`, déclaratif, 20 services : ChatGPT,
   Claude, Gemini, Copilot, Perplexity, Le Chat, Euria, Lumo, Grok,
   DeepSeek, HuggingChat, Poe, Qwen, Kimi, Meta AI, Character.AI, You.com,
-  Z.ai, Pi, **DiDI** = chat.nexio.ovh, vert #3aa14d).
+  Z.ai, Pi, **DiDi** = chat.nexio.ovh, vert #3aa14d).
   - Onboarding au 1er lancement (registre vide → popup de choix).
   - Bouton ＋ et bouton ⚙ → même popup : activer/désactiver (champ `enabled`,
     la session et l'historique sont conservés à la désactivation).
@@ -100,7 +100,7 @@ Priorité proposée :
    Le menu contextuel reste dans la sidebar → jamais caché sous les vues.
 2. **#3 — Logo personnalisé** : dans la modal ✎, champ URL de logo +
    bouton « importer un fichier » (copier dans userData/logos/). Permet de
-   mettre le vrai logo dinosaure de DiDI (l'utilisateur a une image ;
+   mettre le vrai logo dinosaure de DiDi (l'utilisateur a une image ;
    la mettre dans `src/renderer/assets/didi.png` et la référencer).
 3. **#1 — Relais d'une demande vers une autre IA** (fonctionnalité vedette,
    demandée explicitement) :
