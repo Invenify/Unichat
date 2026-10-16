@@ -29,5 +29,8 @@
       "target": "dmg",
       "icon": "build/icon.icns"
     }
+  },
+  "allowScripts": {
+    "electron@30.5.1": true
   }
 }

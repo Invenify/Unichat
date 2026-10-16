@@ -128,21 +128,22 @@ const layers = [
   {
     // Queue de la bulle de dialogue (avant la bulle, pour être dessous).
     dist: (x, y) => sdTriangle(x, y, 338, 146, 322, 198, 384, 152),
-    color: () => WHITE,
+    color: () => DARK,
   },
   {
-    // Bulle de dialogue : « la licorne qui parle ».
+    // Bulle de dialogue : « la licorne qui parle ». Fond sombre pour trancher
+    // sur le dégradé clair du coin, points blancs pour être lisibles à 28 px.
     dist: (x, y) => sdRoundRect(x, y, 392, 105, 72, 45, 26),
-    color: () => WHITE,
+    color: () => DARK,
   },
   {
-    // Points de la bulle (accent).
+    // Points de la bulle (blancs).
     dist: (x, y) => Math.min(
       sdCircle(x, y, 362, 105, 9),
       sdCircle(x, y, 392, 105, 9),
       sdCircle(x, y, 422, 105, 9)
     ),
-    color: () => ACCENT,
+    color: () => WHITE,
   },
 ];
 
