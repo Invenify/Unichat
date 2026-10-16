@@ -10,6 +10,7 @@ const registry = require(path.join(ROOT, 'src/main/registry'));
 const convStore = require(path.join(ROOT, 'src/engine/conv-store'));
 const titleTracker = require(path.join(ROOT, 'src/engine/title-tracker'));
 const metadata = require(path.join(ROOT, 'src/main/metadata'));
+const catalog = require(path.join(ROOT, 'src/main/catalog'));
 
 let failures = 0;
 const check = (label, cond) => {
@@ -21,30 +22,46 @@ const check = (label, cond) => {
   registry.init(tmp);
   convStore.init(tmp);
 
-  // Registre : 3 services par défaut
-  const initial = registry.list();
-  check('3 services par défaut', initial.length === 3);
-  check('Euria présent', initial.some((s) => s.name === 'Euria'));
-  check('Lumo présent', initial.some((s) => s.name === 'Lumo'));
-  check('Le Chat présent', initial.some((s) => s.name === 'Le Chat'));
+  // Registre : vide au premier lancement (l'onboarding catalogue prend le relais)
+  check('registre vide au départ', registry.list().length === 0);
+
+  // Catalogue des services connus
+  const catalogList = catalog.list();
+  check('catalogue fourni', catalogList.length >= 15);
+  check('DiDI présent (service personnalisé)', catalogList.some((c) => c.name === 'DiDI' && c.url === 'https://chat.nexio.ovh'));
+  const didi = catalogList.find((c) => c.name === 'DiDI');
+  check('DiDI vert (dinosaure)', didi.accent === '#3aa14d' && didi.logo.includes('chat.nexio.ovh'));
+  const euria = catalogList.find((c) => c.url.includes('euria.infomaniak.com'));
+  check('Euria bloque KSuite', !!euria && euria.blockNavRegex.includes('ksuite'));
+  check('chaque entrée a nom, url, couleurs, logo', catalogList.every((c) => c.name && c.url && c.accent && c.accent2 && c.logo));
+
+  // Activation d'un service du catalogue + champ enabled
+  const chatgpt = catalogList.find((c) => c.name === 'ChatGPT');
+  const added = registry.add({ ...chatgpt, enabled: true });
+  check('ajout catalogue retourne un id', added.id.startsWith('svc-'));
+  check('ajout activé', added.enabled === true);
+  check('enabled par défaut à true', registry.add({ name: 'X', url: 'https://x.example' }).enabled === true);
+  registry.update(added.id, { enabled: false });
+  check('désactivation via update', registry.get(added.id).enabled === false);
+  registry.update(added.id, { enabled: true });
+  check('réactivation via update', registry.get(added.id).enabled === true);
 
   // Ajout / update / remove
-  const added = registry.add({ name: 'HuggingChat', url: 'https://huggingface.co/chat', accent: '#ffd21e' });
-  check('ajout retourne un id', added.id.startsWith('svc-'));
-  registry.update(added.id, { name: 'HuggingChat HF' });
-  check('update nom', registry.get(added.id).name === 'HuggingChat HF');
+  registry.update(added.id, { name: 'ChatGPT FR' });
+  check('update nom', registry.get(added.id).name === 'ChatGPT FR');
   registry.update(added.id, { blockNavRegex: '^https://ksuite\\.infomaniak\\.com' });
   check('update blockNavRegex', registry.get(added.id).blockNavRegex === '^https://ksuite\\.infomaniak\\.com');
-  registry.update(added.id, { url: 'https://huggingface.co/chat2' });
-  check('update url (session indexee par id)', registry.get(added.id).url === 'https://huggingface.co/chat2');
-  registry.remove(added.id);
-  check('remove', registry.get(added.id) === null);
+  registry.update(added.id, { url: 'https://chatgpt.com/en' });
+  check('update url (session indexee par id)', registry.get(added.id).url === 'https://chatgpt.com/en');
+  const extra = registry.add({ name: 'HuggingChat', url: 'https://huggingface.co/chat', accent: '#ffd21e' });
+  registry.remove(extra.id);
+  check('remove', registry.get(extra.id) === null);
 
   // Import du registre : fusion par URL, jamais d'écrasement ni de doublon
   const before = registry.list().length;
   const imported = registry.importAll([
     { name: 'DeepSeek', url: 'https://chat.deepseek.com', accent: '#4d6bfe' },
-    registry.list()[0], // même URL que Euria → ignoré
+    registry.list()[0], // même URL → ignoré
     { name: 'Sans URL' }, // invalide → ignoré
     null, // invalide → ignoré
   ]);
@@ -62,7 +79,7 @@ const check = (label, cond) => {
   check('dédoublonnage par (service, url)', all.length === 1);
   check('titre mis à jour au renommage', all[0].title === 'Résumé du projet (renommé)');
   convStore.removeService(svc.id);
-  check('removeService vide l\'historique', convStore.listAll().length === 0);
+  check("removeService vide l'historique", convStore.listAll().length === 0);
 
   // title-tracker : filtres racine / exclusions / https
   let captured = null;
@@ -75,20 +92,17 @@ const check = (label, cond) => {
     getTitle() { return this._title; },
   };
   titleTracker.attach(fakeWC, svc, (e) => { captured = e; });
-  fakeWC._url = svc.url; fakeWC._title = 'Accueil Euria';
-  fakeWC.listeners['page-title-updated']({}, 'Accueil Euria');
+  fakeWC._url = svc.url; fakeWC._title = 'Accueil';
+  fakeWC.listeners['page-title-updated']({}, 'Accueil');
   check('URL racine ignorée', captured === null);
   fakeWC._url = svc.url + '/chat/123';
   fakeWC.listeners['page-title-updated']({}, 'Tapas espagnols');
   check('chat enregistré', captured && captured.title === 'Tapas espagnols');
-  fakeWC._url = 'http://insecure.example/x';
-  fakeWC.listeners['did-navigate']({}, 'http://insecure.example/x');
-  check('URL exclue via excludeRegex simulée', true);
 
   // metadata : analyse d'une vraie page (fetch réseau)
   try {
-    const meta = await metadata.analyzeUrl('chat.mistral.ai');
-    console.log('metadata chat.mistral.ai →', JSON.stringify(meta));
+    const meta = await metadata.analyzeUrl('chat.nexio.ovh');
+    console.log('metadata chat.nexio.ovh →', JSON.stringify(meta));
     check('analyzeUrl normalise https', meta.url.startsWith('https://'));
     check('analyzeUrl renvoie un nom', typeof meta.name === 'string' && meta.name.length > 0);
   } catch (e) {

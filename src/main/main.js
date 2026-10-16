@@ -7,6 +7,7 @@ const path = require('path');
 
 const registry = require('./registry');
 const metadata = require('./metadata');
+const catalog = require('./catalog');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 
@@ -124,7 +125,7 @@ function removeServiceView(serviceId, keepSession) {
       .catch(() => {});
   }
   if (activeServiceId === serviceId) {
-    const next = registry.list()[0];
+    const next = registry.list().find((s) => s.enabled !== false);
     if (next) showService(next.id);
     else {
       activeServiceId = null;
@@ -156,11 +157,12 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Un WebContentsView par service du registre, superposées.
-  for (const service of registry.list()) {
+  // Un WebContentsView par service ACTIVÉ du registre, superposées.
+  const enabledServices = registry.list().filter((s) => s.enabled !== false);
+  for (const service of enabledServices) {
     createServiceView(service);
   }
-  const first = registry.list()[0];
+  const first = enabledServices[0];
   if (first) showService(first.id);
 }
 
@@ -169,6 +171,30 @@ function createWindow() {
 ipcMain.handle('get-services', () => registry.list());
 ipcMain.handle('get-history', () => convStore.listAll());
 ipcMain.handle('analyze-url', (_e, url) => metadata.analyzeUrl(url));
+
+ipcMain.handle('get-catalog', () => catalog.list());
+
+// Activer / désactiver un service du catalogue (ou déjà enregistré).
+// Désactiver conserve la session ET l'historique : seule la vue disparaît.
+ipcMain.handle('set-service-enabled', (_e, url, enabled) => {
+  let svc = registry.list().find((s) => s.url === url) || null;
+  if (svc) {
+    registry.update(svc.id, { enabled });
+  } else if (enabled) {
+    const entry = catalog.find(url);
+    if (!entry) return { ok: false, error: 'Service inconnu du catalogue.' };
+    svc = registry.add({ ...entry, enabled: true });
+  }
+  if (!svc) return { ok: false };
+  if (enabled) {
+    if (!views.has(svc.id)) createServiceView(svc);
+    showService(svc.id);
+  } else {
+    removeServiceView(svc.id, true); // session conservée
+  }
+  pushServices();
+  return { ok: true, service: svc };
+});
 
 ipcMain.handle('add-service', (_e, data) => {
   const svc = registry.add(data);

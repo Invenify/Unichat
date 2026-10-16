@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('unichat', {
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   analyzeUrl: (url) => ipcRenderer.invoke('analyze-url', url),
+  getCatalog: () => ipcRenderer.invoke('get-catalog'),
+  setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),
   addService: (data) => ipcRenderer.invoke('add-service', data),
   updateService: (id, patch) => ipcRenderer.invoke('update-service', id, patch),
   removeService: (id, keepSession) => ipcRenderer.invoke('remove-service', id, keepSession),

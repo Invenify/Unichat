@@ -12,6 +12,7 @@ let wizardMode = 'add'; // 'add' | 'edit'
 let editServiceId = null;
 let currentUrl = ''; // URL courante de la vue active
 let pendingRemoveId = null;
+let catalogEntries = [];
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -63,7 +64,8 @@ function render() {
   const list = $('#service-list');
   list.innerHTML = '';
 
-  for (const svc of services) {
+  const visible = services.filter((s) => s.enabled !== false);
+  for (const svc of visible) {
     const group = document.createElement('div');
     group.className = 'svc-group';
 
@@ -152,6 +154,90 @@ function applyTheme(svc) {
   root.style.setProperty('--accent', svc ? svc.accent : '#6c5ce7');
   root.style.setProperty('--accent2', svc ? svc.accent2 : '#a29bfe');
   updateAddressBar();
+}
+
+// --- Catalogue : onboarding au premier lancement, gestion ensuite ---
+
+function isEnabled(url) {
+  const svc = services.find((s) => s.url === url);
+  return !!svc && svc.enabled !== false;
+}
+
+function renderCatalog() {
+  const listEl = $('#catalog-list');
+  listEl.innerHTML = '';
+
+  // Services personnalisés (ajoutés via le wizard) d'abord, puis le catalogue.
+  const custom = services
+    .filter((s) => !catalogEntries.some((c) => c.url === s.url))
+    .map((s) => ({ name: s.name, url: s.url, accent: s.accent, logo: s.logo, custom: true }));
+  const entries = [...custom, ...catalogEntries];
+
+  for (const entry of entries) {
+    const btn = document.createElement('button');
+    btn.className = 'cat-entry' + (isEnabled(entry.url) ? ' enabled' : '');
+    btn.title = entry.url;
+
+    if (entry.logo) {
+      const img = document.createElement('img');
+      img.src = entry.logo;
+      img.alt = '';
+      img.onerror = () => {
+        const fb = document.createElement('span');
+        fb.className = 'cat-fallback';
+        fb.style.background = entry.accent || '#6c5ce7';
+        img.replaceWith(fb);
+      };
+      btn.appendChild(img);
+    } else {
+      const fb = document.createElement('span');
+      fb.className = 'cat-fallback';
+      fb.style.background = entry.accent || '#6c5ce7';
+      btn.appendChild(fb);
+    }
+
+    const name = document.createElement('span');
+    name.className = 'cat-name';
+    name.textContent = entry.name;
+    btn.appendChild(name);
+
+    if (entry.custom) {
+      const tag = document.createElement('span');
+      tag.className = 'cat-custom';
+      tag.textContent = 'perso';
+      btn.appendChild(tag);
+    }
+
+    const check = document.createElement('span');
+    check.className = 'cat-check';
+    check.textContent = isEnabled(entry.url) ? '✓' : '＋';
+    btn.appendChild(check);
+
+    btn.addEventListener('click', async () => {
+      const res = await api.setServiceEnabled(entry.url, !isEnabled(entry.url));
+      if (res.ok) {
+        services = await api.getServices();
+        render();
+        renderCatalog();
+      }
+    });
+    listEl.appendChild(btn);
+  }
+}
+
+function openCatalog(onboarding) {
+  $('#catalog-title').textContent = onboarding
+    ? 'Bienvenue — choisissez vos services IA'
+    : 'Gérer les services';
+  $('#catalog-sub').textContent = onboarding
+    ? 'Sélectionnez les chats IA que vous voulez réunir dans UniChat. Tout est modifiable ensuite (bouton ⚙).'
+    : "Cliquez pour activer ou désactiver un service. Désactiver conserve la session et l'historique ; supprimer (×) efface tout.";
+  renderCatalog();
+  $('#catalog-overlay').classList.remove('hidden');
+}
+
+function closeCatalog() {
+  $('#catalog-overlay').classList.add('hidden');
 }
 
 // --- Wizard ---
@@ -340,6 +426,12 @@ $('#open-external').addEventListener('click', () => {
 $('#export-registry').addEventListener('click', exportRegistry);
 $('#import-registry').addEventListener('click', importRegistry);
 
+$('#manage-services').addEventListener('click', () => openCatalog(false));
+$('#catalog-done').addEventListener('click', closeCatalog);
+$('#catalog-overlay').addEventListener('click', (e) => {
+  if (e.target === $('#catalog-overlay')) closeCatalog();
+});
+
 // Raccourcis : Ctrl/Cmd+1..9 change de service, Ctrl/Cmd+K = recherche.
 document.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
@@ -361,6 +453,10 @@ document.addEventListener('keydown', (e) => {
 api.onServicesUpdated((updated) => {
   services = updated;
   render();
+  // Popup catalogue ouverte : refléter les changements d'état activé/désactivé.
+  if (!$('#catalog-overlay').classList.contains('hidden')) {
+    renderCatalog();
+  }
 });
 
 api.onHistoryUpdated(refreshHistory);
@@ -380,9 +476,12 @@ api.onActiveUrlChanged((url) => {
 // --- Démarrage ---
 
 (async () => {
+  catalogEntries = await api.getCatalog();
   services = await api.getServices();
   history = await api.getHistory();
   activeServiceId = services.length > 0 ? services[0].id : null;
   applyTheme(services.find((s) => s.id === activeServiceId) || null);
   render();
+  // Premier lancement, registre vide : onboarding via le catalogue.
+  if (services.length === 0) openCatalog(true);
 })();

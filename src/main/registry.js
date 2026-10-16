@@ -18,10 +18,9 @@ function load() {
   } catch {
     services = [];
   }
-  if (!Array.isArray(services) || services.length === 0) {
-    services = defaultServices();
-    save();
-  }
+  if (!Array.isArray(services)) services = [];
+  // Registre vide au premier lancement : l'onboarding (popup catalogue)
+  // propose les services connus au lieu d'imposer des valeurs par défaut.
 }
 
 function save() {
@@ -29,16 +28,7 @@ function save() {
   fs.writeFileSync(filePath(), JSON.stringify(services, null, 2));
 }
 
-// Trois entrées initiales, comme n'importe quel autre chat ajouté ensuite.
-function defaultServices() {
-  return [
-    mkService({ name: 'Euria', url: 'https://euria.infomaniak.com', accent: '#0098f7' }),
-    mkService({ name: 'Lumo', url: 'https://lumo.proton.me', accent: '#6d4aff' }),
-    mkService({ name: 'Le Chat', url: 'https://chat.mistral.ai', accent: '#fa520f' }),
-  ];
-}
-
-function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex }) {
+function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled }) {
   return {
     id: 'svc-' + crypto.randomUUID().slice(0, 8),
     name,
@@ -48,6 +38,7 @@ function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavReg
     logo: logo || null,
     excludeRegex: excludeRegex || null,
     blockNavRegex: blockNavRegex || null,
+    enabled: enabled !== false,
   };
 }
 
@@ -64,8 +55,8 @@ function get(id) {
   return services.find((s) => s.id === id) || null;
 }
 
-function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex }) {
-  const svc = mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex });
+function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled }) {
+  const svc = mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled });
   services.push(svc);
   save();
   return svc;
@@ -74,7 +65,7 @@ function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex }) 
 function update(id, patch) {
   const svc = get(id);
   if (!svc) return null;
-  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'excludeRegex', 'blockNavRegex'];
+  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'excludeRegex', 'blockNavRegex', 'enabled'];
   for (const f of fields) {
     if (patch[f] !== undefined) svc[f] = patch[f];
   }

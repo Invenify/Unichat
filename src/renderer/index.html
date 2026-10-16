@@ -23,6 +23,7 @@
 
     <footer id="sidebar-footer">
       <span id="active-url"></span>
+      <button id="manage-services" title="Activer / désactiver des services">⚙</button>
       <button id="export-registry" title="Exporter le registre des services">⤓</button>
       <button id="import-registry" title="Importer un registre de services">⤒</button>
       <button id="open-external" title="Ouvrir dans le navigateur">↗</button>
@@ -85,6 +86,21 @@
         <button id="remove-delete-session" class="primary danger">Supprimer et déconnecter</button>
         <button id="remove-keep-session" class="ghost">Garder la session</button>
         <button id="remove-cancel" class="ghost">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catalogue : onboarding au premier lancement, puis gestion activer/désactiver -->
+  <div id="catalog-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="wizard catalog-popup">
+      <h2 id="catalog-title">Choisir vos services IA</h2>
+      <p id="catalog-sub" class="catalog-sub">
+        Cliquez sur les services que vous voulez. Un clic les active, un second clic les désactive
+        (session et historique conservés).
+      </p>
+      <div id="catalog-list"></div>
+      <div class="wizard-actions">
+        <button id="catalog-done" class="primary">Terminé</button>
       </div>
     </div>
   </div>
