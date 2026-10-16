@@ -36,4 +36,15 @@ function find(url) {
   return catalog.find((s) => s.url === url) || null;
 }
 
-module.exports = { list, find };
+// Même origine (protocole + hôte + port), indépendamment du chemin et des
+// paramètres : un service enregistré avec « ?ksuite-mode=main » correspond
+// toujours à son entrée du catalogue.
+function sameOrigin(a, b) {
+  try {
+    return new URL(a).origin === new URL(b).origin;
+  } catch {
+    return false;
+  }
+}
+
+module.exports = { list, find, sameOrigin };

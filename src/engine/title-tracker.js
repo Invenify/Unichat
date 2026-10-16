@@ -31,8 +31,14 @@ function excluded(service, url) {
   return false;
 }
 
+// Pages de connexion/inscription : jamais des chats, quel que soit le service.
+function isAuthUrl(url) {
+  return /\/(login|signin|signup|register|auth|connexion)(\/|$|\?|#)/i.test(url);
+}
+
 function isChatUrl(service, url) {
   if (!/^https?:/i.test(url)) return false;
+  if (isAuthUrl(url)) return false;
   if (excluded(service, url)) return false;
   return !isRoot(service.url, url);
 }

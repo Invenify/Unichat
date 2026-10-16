@@ -177,8 +177,10 @@ ipcMain.handle('get-catalog', () => catalog.list());
 
 // Activer / désactiver un service du catalogue (ou déjà enregistré).
 // Désactiver conserve la session ET l'historique : seule la vue disparaît.
+// Correspondance par origine : un service avec paramètres d'URL (ex. Euria
+// ?ksuite-mode=main) reste la même entrée que celle du catalogue.
 ipcMain.handle('set-service-enabled', (_e, url, enabled) => {
-  let svc = registry.list().find((s) => s.url === url) || null;
+  let svc = registry.list().find((s) => catalog.sameOrigin(s.url, url)) || null;
   if (svc) {
     registry.update(svc.id, { enabled });
   } else if (enabled) {
@@ -298,6 +300,15 @@ app.whenReady().then(() => {
   const userData = app.getPath('userData');
   registry.init(userData);
   convStore.init(userData);
+
+  // Services enregistrés avant l'existence du catalogue : on leur donne
+  // le logo de leur entrée catalogue (correspondance par origine).
+  for (const svc of registry.list()) {
+    if (svc.logo) continue;
+    const entry = catalog.list().find((c) => catalog.sameOrigin(c.url, svc.url));
+    if (entry) registry.update(svc.id, { logo: entry.logo });
+  }
+
   createWindow();
 });
 

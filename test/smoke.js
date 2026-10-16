@@ -34,6 +34,8 @@ const check = (label, cond) => {
   const euria = catalogList.find((c) => c.url.includes('euria.infomaniak.com'));
   check('Euria bloque KSuite', !!euria && euria.blockNavRegex.includes('ksuite'));
   check('chaque entrée a nom, url, couleurs, logo', catalogList.every((c) => c.name && c.url && c.accent && c.accent2 && c.logo));
+  check('sameOrigin ignore les paramètres', catalog.sameOrigin('https://euria.infomaniak.com/?ksuite-mode=main', 'https://euria.infomaniak.com') === true);
+  check('sameOrigin distingue les hôtes', catalog.sameOrigin('https://a.com', 'https://b.com') === false);
 
   // Activation d'un service du catalogue + champ enabled
   const chatgpt = catalogList.find((c) => c.name === 'ChatGPT');
@@ -98,6 +100,13 @@ const check = (label, cond) => {
   fakeWC._url = svc.url + '/chat/123';
   fakeWC.listeners['page-title-updated']({}, 'Tapas espagnols');
   check('chat enregistré', captured && captured.title === 'Tapas espagnols');
+  captured = null;
+  fakeWC._url = svc.url + '/auth/login';
+  fakeWC.listeners['page-title-updated']({}, 'Connexion - Mistral AI');
+  check('page de connexion ignorée', captured === null);
+  fakeWC._url = svc.url + '/account/login';
+  fakeWC.listeners['page-title-updated']({}, 'Connexion');
+  check('login en sous-chemin ignoré', captured === null);
 
   // metadata : analyse d'une vraie page (fetch réseau)
   try {

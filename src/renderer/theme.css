@@ -42,6 +42,15 @@ html, body {
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 input { font: inherit; }
 
+/* Icônes SVG inline (aucun glyph texte : rendu non garanti selon la police) */
+.icon { display: inline-flex; align-items: center; }
+.icon svg { width: 15px; height: 15px; }
+
+#add-service svg { width: 15px; height: 15px; margin-right: 6px; }
+#sidebar-footer button svg { width: 14px; height: 14px; display: block; }
+#catalog-add-url svg { width: 13px; height: 13px; margin-right: 5px; }
+#catalog-add-url { display: inline-flex; align-items: center; }
+
 /* --- Sidebar --- */
 
 #sidebar {
@@ -92,6 +101,8 @@ input { font: inherit; }
 #search:focus { border-color: var(--accent); }
 
 .add-btn {
+  display: flex;
+  align-items: center;
   margin: 0 14px 10px;
   padding: 9px 12px;
   border-radius: var(--radius);

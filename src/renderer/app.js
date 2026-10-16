@@ -16,6 +16,35 @@ let catalogEntries = [];
 
 const $ = (sel) => document.querySelector(sel);
 
+// Icônes SVG inline (style « stroke », aucun glyph texte : la police du
+// système ne les rend pas tous).
+const ICONS = {
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  edit: '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+};
+
+function svg(name) {
+  const span = document.createElement('span');
+  span.className = 'icon';
+  span.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    ICONS[name] +
+    '</svg>';
+  return span;
+}
+
+// Même origine (protocole + hôte) : un service avec paramètres d'URL reste
+// la même entrée que celle du catalogue.
+function sameOrigin(a, b) {
+  try {
+    return new URL(a).origin === new URL(b).origin;
+  } catch {
+    return false;
+  }
+}
+
 // --- Données ---
 
 async function refreshServices() {
@@ -81,8 +110,8 @@ function render() {
 
     const edit = document.createElement('button');
     edit.className = 'svc-edit';
-    edit.textContent = '✎';
     edit.title = 'Modifier ce service (nom, couleurs, logo)';
+    edit.appendChild(svg('edit'));
     edit.addEventListener('click', (ev) => {
       ev.stopPropagation();
       openEdit(svc);
@@ -91,7 +120,7 @@ function render() {
 
     const remove = document.createElement('button');
     remove.className = 'svc-remove';
-    remove.textContent = '×';
+    remove.appendChild(svg('x'));
     remove.title = 'Supprimer ce service';
     remove.addEventListener('click', (ev) => {
       ev.stopPropagation();
@@ -159,7 +188,7 @@ function applyTheme(svc) {
 // --- Catalogue : onboarding au premier lancement, gestion ensuite ---
 
 function isEnabled(url) {
-  const svc = services.find((s) => s.url === url);
+  const svc = services.find((s) => sameOrigin(s.url, url));
   return !!svc && svc.enabled !== false;
 }
 
@@ -168,8 +197,10 @@ function renderCatalog() {
   listEl.innerHTML = '';
 
   // Services personnalisés (ajoutés via le wizard) d'abord, puis le catalogue.
+  // Correspondance par origine : pas de doublon si les URL diffèrent par
+  // un paramètre (ex. Euria ?ksuite-mode=main).
   const custom = services
-    .filter((s) => !catalogEntries.some((c) => c.url === s.url))
+    .filter((s) => !catalogEntries.some((c) => sameOrigin(c.url, s.url)))
     .map((s) => ({ name: s.name, url: s.url, accent: s.accent, logo: s.logo, custom: true }));
   const entries = [...custom, ...catalogEntries];
 
@@ -210,7 +241,7 @@ function renderCatalog() {
 
     const check = document.createElement('span');
     check.className = 'cat-check';
-    check.textContent = isEnabled(entry.url) ? '✓' : '＋';
+    check.appendChild(svg(isEnabled(entry.url) ? 'check' : 'plus'));
     btn.appendChild(check);
 
     btn.addEventListener('click', async () => {
