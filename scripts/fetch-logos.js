@@ -3,7 +3,11 @@
 // aucune requête réseau n'est nécessaire : les logos s'affichent toujours,
 // même hors ligne, même si le site bloque les favicons distants.
 //
-//   node scripts/fetch-logos.js
+//   node scripts/fetch-logos.js          # ne touche pas aux logos déjà présents
+//   node scripts/fetch-logos.js --force  # re-télécharge tout
+//
+// Les fichiers déjà sur disque sont conservés tels quels : un logo remplacé
+// manuellement (ex. le dinosaure Flaticon de DiDi) survit aux ré-exécutions.
 //
 // Sources essayées dans l'ordre (toutes gratuites, sans clé) :
 //   1. favicon direct du site (favicon.ico, /static/favicon.png…) ;
@@ -64,15 +68,24 @@ async function tryFetch(url) {
 }
 
 async function main() {
+  const force = process.argv.includes('--force');
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const manifest = {};
+  const present = new Set(
+    fs.readdirSync(OUT_DIR).map((f) => f.replace(/\.[^.]+$/, ''))
+  );
+
   let failures = [];
 
   for (const entry of catalog.list()) {
     const u = new URL(entry.url);
     const domain = u.hostname;
     const name = slug(entry.name);
+
+    if (!force && present.has(name)) {
+      console.log(`${entry.name.padEnd(14)} -> conservé (déjà présent)`);
+      continue;
+    }
 
     const sources = [];
     const directPath = DIRECT[domain] || '/favicon.ico';
@@ -96,7 +109,6 @@ async function main() {
 
     const file = `${name}.${got.ext}`;
     fs.writeFileSync(path.join(OUT_DIR, file), got.bytes);
-    manifest[entry.name] = `assets/logos/${file}`;
     console.log(
       `${entry.name.padEnd(14)} -> ${file} (${got.bytes.length} o, source ${used === 0 ? 'direct' : used === 1 ? 'gstatic' : 's2'})`
     );
