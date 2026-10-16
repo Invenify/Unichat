@@ -1,4 +1,6 @@
-/* theme.css — thème UniChat, accentuations par service (--accent / --accent2). */
+/* theme.css — thème UniChat, accentuations par service (--accent / --accent2).
+   La palette suit le thème de l'OS : sombre par défaut, clair via
+   prefers-color-scheme (Chromium suit nativeTheme d'Electron). */
 
 :root {
   --accent: #6c5ce7;
@@ -11,6 +13,19 @@
   --border: #2f2f3d;
   --sidebar-w: 310px;
   --radius: 8px;
+  --overlay-dim: rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f7fa;
+    --bg-2: #ffffff;
+    --bg-3: #ececf2;
+    --fg: #1f1f24;
+    --fg-dim: #6b6b7a;
+    --border: #dcdce4;
+    --overlay-dim: rgba(20, 20, 40, 0.35);
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -239,7 +254,7 @@ input { font: inherit; }
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--overlay-dim);
   display: flex;
   align-items: center;
   justify-content: center;
