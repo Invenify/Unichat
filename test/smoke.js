@@ -36,6 +36,20 @@ const check = (label, cond) => {
   registry.remove(added.id);
   check('remove', registry.get(added.id) === null);
 
+  // Import du registre : fusion par URL, jamais d'écrasement ni de doublon
+  const before = registry.list().length;
+  const imported = registry.importAll([
+    { name: 'DeepSeek', url: 'https://chat.deepseek.com', accent: '#4d6bfe' },
+    registry.list()[0], // même URL que Euria → ignoré
+    { name: 'Sans URL' }, // invalide → ignoré
+    null, // invalide → ignoré
+  ]);
+  check('import ne compte que les nouvelles URLs', imported === 1);
+  check('import ajoute exactement 1 service', registry.list().length === before + 1);
+  check('import préserve les champs', registry.list().some((s) => s.name === 'DeepSeek' && s.accent === '#4d6bfe'));
+  check('import null-safe', registry.importAll(null) === 0);
+  check('ré-import → 0 doublon', registry.importAll([{ name: 'DeepSeek', url: 'https://chat.deepseek.com' }]) === 0);
+
   // conv-store : upsert + dédoublonnage par (service, url)
   const svc = registry.list()[0];
   convStore.upsert(svc.id, svc.url + '/chat/abc#frag', 'Résumé du projet');

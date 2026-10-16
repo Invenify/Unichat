@@ -8,6 +8,10 @@ let history = [];
 let activeServiceId = null;
 let searchTerm = '';
 let analysis = null; // résultat du wizard en cours
+let wizardMode = 'add'; // 'add' | 'edit'
+let editServiceId = null;
+let currentUrl = ''; // URL courante de la vue active
+let pendingRemoveId = null;
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -73,15 +77,23 @@ function render() {
     name.textContent = svc.name;
     header.appendChild(name);
 
+    const edit = document.createElement('button');
+    edit.className = 'svc-edit';
+    edit.textContent = '✎';
+    edit.title = 'Modifier ce service (nom, couleurs, logo)';
+    edit.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      openEdit(svc);
+    });
+    header.appendChild(edit);
+
     const remove = document.createElement('button');
     remove.className = 'svc-remove';
     remove.textContent = '×';
     remove.title = 'Supprimer ce service';
     remove.addEventListener('click', (ev) => {
       ev.stopPropagation();
-      if (confirm(`Supprimer « ${svc.name} » ?\n\nOK = supprimer aussi la session (déconnexion)\nAnnuler = abandon`)) {
-        api.removeService(svc.id, false);
-      }
+      openRemove(svc);
     });
     header.appendChild(remove);
 
@@ -126,23 +138,56 @@ function render() {
   }
 }
 
+// Barre d'adresse : URL courante de la vue active, sinon la racine du service.
+function updateAddressBar() {
+  const svc = services.find((s) => s.id === activeServiceId);
+  const shown = currentUrl || (svc ? svc.url : '');
+  const el = $('#active-url');
+  el.textContent = shown;
+  el.title = shown;
+}
+
 function applyTheme(svc) {
   const root = document.documentElement;
   root.style.setProperty('--accent', svc ? svc.accent : '#6c5ce7');
   root.style.setProperty('--accent2', svc ? svc.accent2 : '#a29bfe');
-  $('#active-url').textContent = svc ? svc.url : '';
+  updateAddressBar();
 }
 
 // --- Wizard ---
 
 function openWizard() {
+  wizardMode = 'add';
+  editServiceId = null;
   analysis = null;
+  $('#wizard-title').textContent = 'Ajouter un service';
+  $('#wizard-save').textContent = 'Ajouter le service';
   $('#svc-url').value = '';
   $('#wizard-error').classList.add('hidden');
   $('#wizard-step-url').classList.remove('hidden');
   $('#wizard-step-confirm').classList.add('hidden');
   $('#wizard-overlay').classList.remove('hidden');
   $('#svc-url').focus();
+}
+
+// Édition : mêmes champs que le wizard, sans ré-analyser l'URL
+// (changer l'URL reviendrait à créer un autre service, avec une autre session).
+function openEdit(svc) {
+  wizardMode = 'edit';
+  editServiceId = svc.id;
+  analysis = { url: svc.url };
+  $('#wizard-title').textContent = 'Modifier le service';
+  $('#wizard-save').textContent = 'Enregistrer';
+  $('#svc-name').value = svc.name;
+  $('#svc-logo').src = svc.logo || '';
+  $('#svc-name-preview').textContent = svc.name;
+  $('#svc-accent').value = normalizeColor(svc.accent);
+  $('#svc-accent2').value = normalizeColor(svc.accent2);
+  $('#wizard-error').classList.add('hidden');
+  $('#wizard-step-url').classList.add('hidden');
+  $('#wizard-step-confirm').classList.remove('hidden');
+  $('#wizard-overlay').classList.remove('hidden');
+  $('#svc-name').focus();
 }
 
 function closeWizard() {
@@ -192,13 +237,47 @@ async function saveService() {
   if (!analysis) return;
   const data = {
     name: $('#svc-name').value.trim() || analysis.name,
-    url: analysis.url,
-    logo: analysis.faviconUrl || null,
+    logo: $('#svc-logo').getAttribute('src') || null,
     accent: $('#svc-accent').value,
     accent2: $('#svc-accent2').value,
   };
-  await api.addService(data);
+  if (wizardMode === 'edit') {
+    await api.updateService(editServiceId, data);
+  } else {
+    await api.addService({ ...data, url: analysis.url });
+  }
   closeWizard();
+}
+
+// --- Suppression (avec choix session conservée / déconnectée) ---
+
+function openRemove(svc) {
+  pendingRemoveId = svc.id;
+  $('#remove-title').textContent = `Supprimer « ${svc.name} » ?`;
+  $('#remove-overlay').classList.remove('hidden');
+}
+
+function closeRemove() {
+  $('#remove-overlay').classList.add('hidden');
+  pendingRemoveId = null;
+}
+
+// --- Export / import du registre ---
+
+async function exportRegistry() {
+  const res = await api.exportRegistry();
+  if (res.ok) return;
+  if (!res.canceled) alert("Export impossible : " + (res.error || 'erreur inconnue'));
+}
+
+async function importRegistry() {
+  const res = await api.importRegistry();
+  if (res.ok) {
+    if (res.added > 0) alert(`${res.added} service(s) importé(s).`);
+    else alert('Aucun nouveau service : les entrées du fichier existent déjà (fusion par URL).');
+  } else if (!res.canceled) {
+    alert("Import impossible : " + (res.error || 'erreur inconnue'));
+  }
 }
 
 // --- Événements ---
@@ -217,6 +296,22 @@ $('#wizard-save').addEventListener('click', saveService);
 $('#wizard-overlay').addEventListener('click', (e) => {
   if (e.target === $('#wizard-overlay')) closeWizard();
 });
+$('#svc-name').addEventListener('input', (e) => {
+  $('#svc-name-preview').textContent = e.target.value;
+});
+
+$('#remove-delete-session').addEventListener('click', () => {
+  if (pendingRemoveId) api.removeService(pendingRemoveId, false);
+  closeRemove();
+});
+$('#remove-keep-session').addEventListener('click', () => {
+  if (pendingRemoveId) api.removeService(pendingRemoveId, true);
+  closeRemove();
+});
+$('#remove-cancel').addEventListener('click', closeRemove);
+$('#remove-overlay').addEventListener('click', (e) => {
+  if (e.target === $('#remove-overlay')) closeRemove();
+});
 
 $('#search').addEventListener('input', (e) => {
   searchTerm = e.target.value.trim().toLowerCase();
@@ -224,9 +319,12 @@ $('#search').addEventListener('input', (e) => {
 });
 
 $('#open-external').addEventListener('click', () => {
-  const svc = services.find((s) => s.id === activeServiceId);
-  if (svc) api.openExternal(svc.url);
+  const url = currentUrl || (services.find((s) => s.id === activeServiceId) || {}).url;
+  if (url) api.openExternal(url);
 });
+
+$('#export-registry').addEventListener('click', exportRegistry);
+$('#import-registry').addEventListener('click', importRegistry);
 
 // Raccourcis : Ctrl/Cmd+1..9 change de service, Ctrl/Cmd+K = recherche.
 document.addEventListener('keydown', (e) => {
@@ -258,6 +356,11 @@ api.onActiveServiceChanged((id) => {
   const svc = services.find((s) => s.id === id);
   applyTheme(svc || null);
   render();
+});
+
+api.onActiveUrlChanged((url) => {
+  currentUrl = url || '';
+  updateAddressBar();
 });
 
 // --- Démarrage ---

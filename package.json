@@ -7,6 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "icon": "node scripts/make-icon.js",
     "dist:win": "electron-builder --win nsis",
     "dist:mac": "electron-builder --mac dmg"
   },

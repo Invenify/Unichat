@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('unichat', {
   showService: (id) => ipcRenderer.invoke('show-service', id),
   navigate: (serviceId, url) => ipcRenderer.invoke('navigate', serviceId, url),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  exportRegistry: () => ipcRenderer.invoke('export-registry'),
+  importRegistry: () => ipcRenderer.invoke('import-registry'),
 
   onServicesUpdated: (cb) => {
     const listener = (_e, services) => cb(services);
@@ -27,5 +29,10 @@ contextBridge.exposeInMainWorld('unichat', {
     const listener = (_e, id) => cb(id);
     ipcRenderer.on('active-service-changed', listener);
     return () => ipcRenderer.removeListener('active-service-changed', listener);
+  },
+  onActiveUrlChanged: (cb) => {
+    const listener = (_e, url) => cb(url);
+    ipcRenderer.on('active-url-changed', listener);
+    return () => ipcRenderer.removeListener('active-url-changed', listener);
   },
 });

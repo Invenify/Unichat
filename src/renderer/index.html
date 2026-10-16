@@ -22,14 +22,16 @@
 
     <footer id="sidebar-footer">
       <span id="active-url"></span>
+      <button id="export-registry" title="Exporter le registre des services">⤓</button>
+      <button id="import-registry" title="Importer un registre de services">⤒</button>
       <button id="open-external" title="Ouvrir dans le navigateur">↗</button>
     </footer>
   </aside>
 
-  <!-- Wizard « Ajouter un service » -->
+  <!-- Wizard « Ajouter / Modifier un service » -->
   <div id="wizard-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="wizard">
-      <h2>Ajouter un service</h2>
+      <h2 id="wizard-title">Ajouter un service</h2>
 
       <div id="wizard-step-url" class="wizard-step">
         <label for="svc-url">URL du chat IA</label>
@@ -58,6 +60,23 @@
       </div>
 
       <p id="wizard-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <!-- Suppression d'un service : la session (connexion) est conservable -->
+  <div id="remove-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="wizard">
+      <h2 id="remove-title"></h2>
+      <p class="remove-hint">
+        Supprimer le service retire son entrée du registre et sa vue.
+        La session (connexion) peut être conservée : le service réapparaîtra
+        déjà connecté s'il est réajouté avec la même URL.
+      </p>
+      <div class="wizard-actions">
+        <button id="remove-delete-session" class="primary danger">Supprimer et déconnecter</button>
+        <button id="remove-keep-session" class="ghost">Garder la session</button>
+        <button id="remove-cancel" class="ghost">Annuler</button>
+      </div>
     </div>
   </div>
 

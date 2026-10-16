@@ -1,7 +1,8 @@
 // main.js — fenêtre UniChat : sidebar (renderer) + un WebContentsView par
 // service, sessions persistantes, empilées, une seule visible.
 
-const { app, BrowserWindow, WebContentsView, session, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog } = require('electron');
+const fs = require('fs');
 const path = require('path');
 
 const registry = require('./registry');
@@ -36,6 +37,14 @@ function pushHistory() {
   }
 }
 
+// URL courante de la vue active → barre d'adresse de la sidebar.
+function pushActiveUrl() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const view = activeServiceId ? views.get(activeServiceId) : null;
+  const url = view ? view.webContents.getURL() : '';
+  mainWindow.webContents.send('active-url-changed', url);
+}
+
 function createServiceView(service) {
   if (views.has(service.id)) return views.get(service.id);
   const ses = session.fromPartition(`persist:${service.id}`);
@@ -51,6 +60,12 @@ function createServiceView(service) {
   mainWindow.contentView.addChildView(view);
 
   titleTracker.attach(view.webContents, service, () => pushHistory());
+  view.webContents.on('did-navigate', () => {
+    if (service.id === activeServiceId) pushActiveUrl();
+  });
+  view.webContents.on('did-navigate-in-page', () => {
+    if (service.id === activeServiceId) pushActiveUrl();
+  });
   view.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
@@ -67,6 +82,7 @@ function showService(serviceId) {
   if (!views.has(serviceId)) return;
   activeServiceId = serviceId;
   layoutViews();
+  pushActiveUrl();
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('active-service-changed', serviceId);
   }
@@ -171,6 +187,47 @@ ipcMain.handle('navigate', (_e, serviceId, url) => {
 
 ipcMain.handle('open-external', (_e, url) => {
   if (/^https?:/i.test(url)) shell.openExternal(url);
+});
+
+// Export du registre : dialogue natif « Enregistrer sous », JSON brut.
+ipcMain.handle('export-registry', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Exporter le registre UniChat',
+    defaultPath: 'unichat-services.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return { ok: false, canceled: true };
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(registry.list(), null, 2));
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+  return { ok: true, filePath };
+});
+
+// Import : fusion par URL (jamais d'écrasement), puis création des vues manquantes.
+ipcMain.handle('import-registry', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Importer un registre UniChat',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  });
+  if (canceled || !filePaths || filePaths.length === 0) return { ok: false, canceled: true };
+  let list;
+  try {
+    list = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+  } catch (e) {
+    return { ok: false, error: 'Fichier illisible : ' + (e.message || e) };
+  }
+  const added = registry.importAll(list);
+  for (const svc of registry.list()) {
+    if (!views.has(svc.id)) createServiceView(svc);
+  }
+  pushServices();
+  return { ok: true, added };
 });
 
 app.whenReady().then(() => {

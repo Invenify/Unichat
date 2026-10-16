@@ -6,6 +6,7 @@ Tous vos chats IA dans une seule interface. Desktop (Electron, Windows/Mac) et, 
 
 - **Registre de services dynamique** : on colle l'URL d'un chat IA, l'app récupère automatiquement le nom, le logo (favicon) et les couleurs (theme-color, manifest.json), modifiables avant enregistrement.
 - **Moteur de titres universel** : à chaque navigation dans un WebView, l'app enregistre `{serviceId, url, titre de la page, date}`. La sidebar est construite à partir de cet historique local — aucun sélecteur CSS à maintenir, le titre de la page EST le titre du chat.
+- **Finitions** : édition d'un service (nom, couleurs, logo), suppression avec session conservable ou déconnectée, barre d'adresse affichant l'URL courante, export/import du registre en JSON (fusion par URL), raccourcis Ctrl/Cmd+1…9 et Ctrl/Cmd+K.
 - **Règle d'or** : aucun code spécifique à un service. Un service = une entrée JSON dans le registre.
 
 ## Démarrage
@@ -15,6 +16,7 @@ npm install
 npm start
 ```
 
+- `npm run icon` — génère `build/icon.png` (512px, converti en .ico/.icns par electron-builder)
 - `npm run dist:win` — packaging NSIS Windows
 - `npm run dist:mac` — packaging DMG Mac (icônes `build/icon.ico` / `build/icon.icns`)
 

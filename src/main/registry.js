@@ -88,4 +88,28 @@ function remove(id) {
   return svc;
 }
 
-module.exports = { init, list, get, add, update, remove };
+// Import d'un registre exporté : fusion par URL, jamais d'écrasement.
+// Les entrées existantes (même URL) sont ignorées, les autres ajoutées.
+function importAll(list) {
+  if (!Array.isArray(list)) return 0;
+  let added = 0;
+  for (const s of list) {
+    if (!s || typeof s.url !== 'string' || s.url === '') continue;
+    if (services.some((x) => x.url === s.url)) continue;
+    services.push(
+      mkService({
+        name: s.name,
+        url: s.url,
+        accent: s.accent,
+        accent2: s.accent2,
+        logo: s.logo,
+        excludeRegex: s.excludeRegex,
+      })
+    );
+    added++;
+  }
+  if (added > 0) save();
+  return added;
+}
+
+module.exports = { init, list, get, add, update, remove, importAll };
