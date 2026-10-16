@@ -40,7 +40,17 @@ input { font: inherit; }
 }
 
 #brand {
-  padding: 16px 18px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 10px;
+}
+
+#brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
 }
 
 #brand .logo {

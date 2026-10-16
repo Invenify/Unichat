@@ -16,7 +16,7 @@ npm install
 npm start
 ```
 
-- `npm run icon` — génère `build/icon.png` (512px, converti en .ico/.icns par electron-builder)
+- `npm run icon` — génère le logo « licorne qui parle » : `build/icon.png` (512px, converti en .ico/.icns par electron-builder) et `src/renderer/assets/logo.png` (sidebar)
 - `npm run dist:win` — packaging NSIS Windows
 - `npm run dist:mac` — packaging DMG Mac (icônes `build/icon.ico` / `build/icon.icns`)
 
