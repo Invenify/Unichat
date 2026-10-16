@@ -103,19 +103,22 @@
 
   <!-- Catalogue : onboarding au premier lancement, puis gestion activer/désactiver -->
   <div id="catalog-overlay" class="overlay hidden" role="dialog" aria-modal="true">
-    <div class="wizard catalog-popup">
+    <div class="catalog-popup">
+      <button id="catalog-close" class="catalog-close" title="Fermer (Échap)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
       <h2 id="catalog-title">Choisir vos services IA</h2>
       <p id="catalog-sub" class="catalog-sub">
         Cliquez sur les services que vous voulez. Un clic les active, un second clic les désactive
         (session et historique conservés).
       </p>
       <div id="catalog-list"></div>
-      <div class="wizard-actions">
-        <button id="catalog-done" class="primary">Terminé</button>
+      <div class="catalog-footer">
         <button id="catalog-add-url" class="ghost">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Ajouter par URL…
         </button>
+        <button id="catalog-done" class="primary">Terminé</button>
       </div>
     </div>
   </div>

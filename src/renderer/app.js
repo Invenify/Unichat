@@ -68,10 +68,18 @@ function timeAgo(ts) {
   return new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
+// Logo local du catalogue par origine : les services enregistrés avant le
+// passage aux assets locaux peuvent avoir une URL distante en échec.
+function catalogLogoFor(url) {
+  const entry = catalogEntries.find((c) => sameOrigin(c.url, url));
+  return entry ? entry.logo : null;
+}
+
 function serviceLogo(svc) {
-  if (svc.logo) {
+  const src = catalogLogoFor(svc.url) || svc.logo;
+  if (src) {
     const img = document.createElement('img');
-    img.src = svc.logo;
+    img.src = src;
     img.alt = '';
     img.onerror = () => img.replaceWith(fallbackDot(svc));
     return img;
@@ -560,8 +568,14 @@ $('#import-registry').addEventListener('click', importRegistry);
 
 $('#manage-services').addEventListener('click', () => openCatalog(false));
 $('#catalog-done').addEventListener('click', closeCatalog);
+$('#catalog-close').addEventListener('click', closeCatalog);
 $('#catalog-overlay').addEventListener('click', (e) => {
   if (e.target === $('#catalog-overlay')) closeCatalog();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#catalog-overlay').classList.contains('hidden')) {
+    closeCatalog();
+  }
 });
 
 // Raccourcis : Ctrl/Cmd+1..9 change de service, Ctrl/Cmd+K = recherche.

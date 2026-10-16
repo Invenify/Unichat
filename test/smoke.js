@@ -30,7 +30,9 @@ const check = (label, cond) => {
   check('catalogue fourni', catalogList.length >= 15);
   check('DiDI présent (service personnalisé)', catalogList.some((c) => c.name === 'DiDI' && c.url === 'https://chat.nexio.ovh'));
   const didi = catalogList.find((c) => c.name === 'DiDI');
-  check('DiDI vert (dinosaure)', didi.accent === '#3aa14d' && didi.logo.includes('chat.nexio.ovh'));
+  check('DiDI vert (dinosaure)', didi.accent === '#3aa14d');
+  check('logos locaux présents (DiDI)', didi.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', didi.logo)));
+  check('tous les logos locaux existent', catalogList.every((c) => c.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', c.logo))));
   const euria = catalogList.find((c) => c.url.includes('euria.infomaniak.com'));
   check('Euria bloque KSuite', !!euria && euria.blockNavRegex.includes('ksuite'));
   check('chaque entrée a nom, url, couleurs, logo', catalogList.every((c) => c.name && c.url && c.accent && c.accent2 && c.logo));
