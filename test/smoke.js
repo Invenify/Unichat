@@ -218,6 +218,16 @@ const check = (label, cond) => {
   // normalizeUrl
   check('normalizeUrl ajoute https', metadata.normalizeUrl('example.com') === 'https://example.com');
 
+  // settings : thème 'system' par défaut, forçage light/dark persistant
+  const settings = require(path.join(ROOT, 'src/main/settings'));
+  const s1 = settings.init(path.join(tmp, 'settings'));
+  check('settings défaut system', s1.theme === 'system');
+  check('settings setTheme dark', settings.setTheme('dark').theme === 'dark');
+  const s2 = settings.init(path.join(tmp, 'settings'));
+  check('settings thème persisté', s2.theme === 'dark');
+  check('settings refuse thème inconnu', settings.setTheme('neon') === null);
+  check('settings THEMES', JSON.stringify(settings.THEMES) === JSON.stringify(['system', 'light', 'dark']));
+
   console.log(failures === 0 ? 'ALL TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);
 })();

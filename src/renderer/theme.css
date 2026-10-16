@@ -1,6 +1,7 @@
 /* theme.css — thème UniChat, accentuations par service (--accent / --accent2).
    La palette suit le thème de l'OS : sombre par défaut, clair via
-   prefers-color-scheme (Chromium suit nativeTheme d'Electron). */
+   prefers-color-scheme (Chromium suit nativeTheme d'Electron, que l'app
+   peut forcer en clair ou sombre, cf. réglage thème de la sidebar). */
 
 :root {
   --accent: #6c5ce7;
@@ -241,8 +242,8 @@ input { font: inherit; }
 
 #open-external { padding: 2px 8px; border-radius: 4px; }
 #open-external:hover { background: var(--bg-3); color: var(--fg); }
-#relay-open, #manage-services, #export-registry, #import-registry { padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
-#relay-open:hover, #manage-services:hover, #export-registry:hover, #import-registry:hover { background: var(--bg-3); color: var(--fg); }
+#relay-open, #manage-services, #export-registry, #import-registry, #theme-toggle { padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+#relay-open:hover, #manage-services:hover, #export-registry:hover, #import-registry:hover, #theme-toggle:hover { background: var(--bg-3); color: var(--fg); }
 #relay-open svg { width: 14px; height: 14px; display: block; }
 
 /* --- Catalogue des services --- */

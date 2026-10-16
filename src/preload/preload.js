@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('unichat', {
   renameHistoryEntry: (serviceId, url, title) => ipcRenderer.invoke('history-rename', serviceId, url, title),
   setPinnedHistoryEntry: (serviceId, url, pinned) => ipcRenderer.invoke('history-set-pinned', serviceId, url, pinned),
   analyzeUrl: (url) => ipcRenderer.invoke('analyze-url', url),
+  getTheme: () => ipcRenderer.invoke('get-theme'),
+  setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
   getCatalog: () => ipcRenderer.invoke('get-catalog'),
   setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),
   addService: (data) => ipcRenderer.invoke('add-service', data),

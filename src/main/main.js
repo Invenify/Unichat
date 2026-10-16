@@ -1,7 +1,7 @@
 // main.js — fenêtre UniChat : sidebar (renderer) + un WebContentsView par
 // service, sessions persistantes, empilées, une seule visible.
 
-const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol, Tray, Menu, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol, Tray, Menu, nativeImage, Notification, nativeTheme } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,6 +9,7 @@ const registry = require('./registry');
 const metadata = require('./metadata');
 const catalog = require('./catalog');
 const logos = require('./logos');
+const settings = require('./settings');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 
@@ -212,6 +213,14 @@ ipcMain.handle('history-set-pinned', (_e, serviceId, url, pinned) => {
   return entry || null;
 });
 ipcMain.handle('analyze-url', (_e, url) => metadata.analyzeUrl(url));
+
+// Thème : 'system' suit l'OS, 'light'/'dark' force via nativeTheme.themeSource.
+ipcMain.handle('get-theme', () => settings.get().theme);
+ipcMain.handle('set-theme', (_e, theme) => {
+  const result = settings.setTheme(theme);
+  if (result) nativeTheme.themeSource = result.theme;
+  return result ? result.theme : null;
+});
 
 ipcMain.handle('get-catalog', () => catalog.list());
 
@@ -419,6 +428,12 @@ if (!gotInstanceLock) {
   const userData = app.getPath('userData');
   registry.init(userData);
   convStore.init(userData);
+
+  // Thème : nativeTheme.themeSource pilote prefers-color-scheme pour toute
+  // l'app (sidebar ET vues des services) : 'system' suit l'OS, 'light'/'dark'
+  // force. Appliqué avant createWindow pour éviter tout flash au démarrage.
+  settings.init(userData);
+  nativeTheme.themeSource = settings.get().theme;
 
   // Les logos importés vivent dans userData/logos ; le renderer ne peut pas
   // y accéder en file:// direct, on les sert via le schéma interne.
