@@ -33,6 +33,10 @@ const check = (label, cond) => {
   check('ajout retourne un id', added.id.startsWith('svc-'));
   registry.update(added.id, { name: 'HuggingChat HF' });
   check('update nom', registry.get(added.id).name === 'HuggingChat HF');
+  registry.update(added.id, { blockNavRegex: '^https://ksuite\\.infomaniak\\.com' });
+  check('update blockNavRegex', registry.get(added.id).blockNavRegex === '^https://ksuite\\.infomaniak\\.com');
+  registry.update(added.id, { url: 'https://huggingface.co/chat2' });
+  check('update url (session indexee par id)', registry.get(added.id).url === 'https://huggingface.co/chat2');
   registry.remove(added.id);
   check('remove', registry.get(added.id) === null);
 

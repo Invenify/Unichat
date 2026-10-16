@@ -38,7 +38,7 @@ function defaultServices() {
   ];
 }
 
-function mkService({ name, url, accent, accent2, logo, excludeRegex }) {
+function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex }) {
   return {
     id: 'svc-' + crypto.randomUUID().slice(0, 8),
     name,
@@ -47,6 +47,7 @@ function mkService({ name, url, accent, accent2, logo, excludeRegex }) {
     accent2: accent2 || '#a29bfe',
     logo: logo || null,
     excludeRegex: excludeRegex || null,
+    blockNavRegex: blockNavRegex || null,
   };
 }
 
@@ -63,8 +64,8 @@ function get(id) {
   return services.find((s) => s.id === id) || null;
 }
 
-function add({ name, url, accent, accent2, logo, excludeRegex }) {
-  const svc = mkService({ name, url, accent, accent2, logo, excludeRegex });
+function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex }) {
+  const svc = mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex });
   services.push(svc);
   save();
   return svc;
@@ -73,7 +74,7 @@ function add({ name, url, accent, accent2, logo, excludeRegex }) {
 function update(id, patch) {
   const svc = get(id);
   if (!svc) return null;
-  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'excludeRegex'];
+  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'excludeRegex', 'blockNavRegex'];
   for (const f of fields) {
     if (patch[f] !== undefined) svc[f] = patch[f];
   }

@@ -60,6 +60,28 @@ function createServiceView(service) {
   mainWindow.contentView.addChildView(view);
 
   titleTracker.attach(view.webContents, service, () => pushHistory());
+
+  // Regex optionnelle : bloque les navigations vers des domaines indésirables.
+  // Cas d'usage : un service (ex. Euria) qui redirige vers son shell parent
+  // (ex. KSuite) alors qu'il fonctionne très bien en standalone.
+  if (service.blockNavRegex) {
+    let re = null;
+    try {
+      re = new RegExp(service.blockNavRegex);
+    } catch {
+      // regex invalide : pas de blocage
+    }
+    if (re) {
+      const block = (event, url) => {
+        if (re.test(url)) event.preventDefault();
+      };
+      // location.href / liens → will-navigate ; redirections serveur → will-redirect.
+      // loadURL() (nos navigations) ne passe pas par will-navigate.
+      view.webContents.on('will-navigate', block);
+      view.webContents.on('will-redirect', block);
+    }
+  }
+
   view.webContents.on('did-navigate', () => {
     if (service.id === activeServiceId) pushActiveUrl();
   });
@@ -158,6 +180,14 @@ ipcMain.handle('add-service', (_e, data) => {
 
 ipcMain.handle('update-service', (_e, id, patch) => {
   const svc = registry.update(id, patch);
+  // URL ou regex de blocage modifiée : la vue est recréée pour rebrancher le
+  // title-tracker et le blocage. La session (partition) est conservée.
+  if (svc && views.has(id) && (patch.url !== undefined || patch.blockNavRegex !== undefined)) {
+    const wasActive = activeServiceId === id;
+    removeServiceView(id, true);
+    createServiceView(svc);
+    if (wasActive) showService(id);
+  }
   pushServices();
   return svc;
 });

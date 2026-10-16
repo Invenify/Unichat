@@ -156,10 +156,17 @@ function applyTheme(svc) {
 
 // --- Wizard ---
 
+function setEditFieldsVisible(visible) {
+  document.querySelectorAll('.edit-only').forEach((el) => {
+    el.classList.toggle('hidden', !visible);
+  });
+}
+
 function openWizard() {
   wizardMode = 'add';
   editServiceId = null;
   analysis = null;
+  setEditFieldsVisible(false);
   $('#wizard-title').textContent = 'Ajouter un service';
   $('#wizard-save').textContent = 'Ajouter le service';
   $('#svc-url').value = '';
@@ -170,12 +177,13 @@ function openWizard() {
   $('#svc-url').focus();
 }
 
-// Édition : mêmes champs que le wizard, sans ré-analyser l'URL
-// (changer l'URL reviendrait à créer un autre service, avec une autre session).
+// Édition : mêmes champs que le wizard, sans ré-analyser. L'URL reste modifiable :
+// la session vit dans la partition persist:<id>, pas dans l'URL.
 function openEdit(svc) {
   wizardMode = 'edit';
   editServiceId = svc.id;
   analysis = { url: svc.url };
+  setEditFieldsVisible(true);
   $('#wizard-title').textContent = 'Modifier le service';
   $('#wizard-save').textContent = 'Enregistrer';
   $('#svc-name').value = svc.name;
@@ -183,6 +191,9 @@ function openEdit(svc) {
   $('#svc-name-preview').textContent = svc.name;
   $('#svc-accent').value = normalizeColor(svc.accent);
   $('#svc-accent2').value = normalizeColor(svc.accent2);
+  $('#svc-url-edit').value = svc.url;
+  $('#svc-exclude').value = svc.excludeRegex || '';
+  $('#svc-blocknav').value = svc.blockNavRegex || '';
   $('#wizard-error').classList.add('hidden');
   $('#wizard-step-url').classList.add('hidden');
   $('#wizard-step-confirm').classList.remove('hidden');
@@ -242,6 +253,9 @@ async function saveService() {
     accent2: $('#svc-accent2').value,
   };
   if (wizardMode === 'edit') {
+    data.url = $('#svc-url-edit').value.trim() || analysis.url;
+    data.excludeRegex = $('#svc-exclude').value.trim() || null;
+    data.blockNavRegex = $('#svc-blocknav').value.trim() || null;
     await api.updateService(editServiceId, data);
   } else {
     await api.addService({ ...data, url: analysis.url });

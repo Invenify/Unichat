@@ -54,6 +54,14 @@
         <input id="svc-accent" type="color" />
         <label for="svc-accent2">Couleur secondaire</label>
         <input id="svc-accent2" type="color" />
+
+        <label for="svc-url-edit" class="edit-only hidden">URL de démarrage</label>
+        <input id="svc-url-edit" type="url" class="edit-only hidden" />
+        <label for="svc-exclude" class="edit-only hidden">Exclure de l'historique (regex, optionnel)</label>
+        <input id="svc-exclude" type="text" class="edit-only hidden" placeholder="ex. /login|/settings" />
+        <label for="svc-blocknav" class="edit-only hidden">Bloquer les redirections vers (regex, optionnel)</label>
+        <input id="svc-blocknav" type="text" class="edit-only hidden" placeholder="ex. ^https://ksuite\.infomaniak\.com" />
+
         <div class="wizard-actions">
           <button id="wizard-save" class="primary">Ajouter le service</button>
           <button id="wizard-back" class="ghost">Retour</button>
