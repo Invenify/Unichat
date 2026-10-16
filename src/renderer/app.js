@@ -10,6 +10,8 @@ let searchTerm = '';
 let analysis = null; // résultat du wizard en cours
 let wizardMode = 'add'; // 'add' | 'edit'
 let editServiceId = null;
+let wizardLogoOriginal = ''; // logo affiché à l'ouverture (base de customLogo)
+let wizardCustomOriginal = false; // drapeau customLogo à l'ouverture (édition)
 let currentUrl = ''; // URL courante de la vue active
 let pendingRemoveId = null;
 let catalogEntries = [];
@@ -76,7 +78,11 @@ function catalogLogoFor(url) {
 }
 
 function serviceLogo(svc) {
-  const src = catalogLogoFor(svc.url) || svc.logo;
+  // Le logo choisi dans la modal ✎ (URL ou fichier importé) prime sur le
+  // logo du catalogue ; sinon l'asset local du catalogue est préféré à une
+  // favicon distante éventuellement morte.
+  const src =
+    svc.customLogo && svc.logo ? svc.logo : catalogLogoFor(svc.url) || svc.logo;
   if (src) {
     const img = document.createElement('img');
     img.src = src;
@@ -308,6 +314,9 @@ function openWizard() {
   $('#wizard-title').textContent = 'Ajouter un service';
   $('#wizard-save').textContent = 'Ajouter le service';
   $('#svc-url').value = '';
+  $('#svc-logo-url').value = '';
+  wizardLogoOriginal = '';
+  wizardCustomOriginal = false;
   $('#wizard-error').classList.add('hidden');
   $('#wizard-step-url').classList.remove('hidden');
   $('#wizard-step-confirm').classList.add('hidden');
@@ -326,6 +335,9 @@ function openEdit(svc) {
   $('#wizard-save').textContent = 'Enregistrer';
   $('#svc-name').value = svc.name;
   $('#svc-logo').src = svc.logo || '';
+  $('#svc-logo-url').value = svc.logo || '';
+  wizardLogoOriginal = svc.logo || '';
+  wizardCustomOriginal = !!svc.customLogo;
   $('#svc-name-preview').textContent = svc.name;
   $('#svc-accent').value = normalizeColor(svc.accent);
   $('#svc-accent2').value = normalizeColor(svc.accent2);
@@ -356,6 +368,8 @@ async function analyze() {
     analysis = await api.analyzeUrl(url);
     $('#svc-name').value = analysis.name;
     $('#svc-logo').src = analysis.faviconUrl || '';
+    $('#svc-logo-url').value = analysis.faviconUrl || '';
+    wizardLogoOriginal = analysis.faviconUrl || '';
     $('#svc-accent').value = normalizeColor(analysis.accent);
     $('#svc-accent2').value = normalizeColor(analysis.accent2);
     $('#svc-name-preview').textContent = analysis.name;
@@ -386,9 +400,14 @@ function normalizeColor(c) {
 
 async function saveService() {
   if (!analysis) return;
+  const logo = $('#svc-logo-url').value.trim() || null;
   const data = {
     name: $('#svc-name').value.trim() || analysis.name,
-    logo: $('#svc-logo').getAttribute('src') || null,
+    logo,
+    // customLogo : seulement si l'utilisateur a changé le logo affiché (URL
+    // saisie, favicon modifiée ou fichier importé). Sinon le logo du
+    // catalogue reste prioritaire (asset local, marche hors ligne).
+    customLogo: !logo ? false : logo !== wizardLogoOriginal || wizardCustomOriginal === true,
     accent: $('#svc-accent').value,
     accent2: $('#svc-accent2').value,
   };
@@ -515,6 +534,85 @@ function startRename(entry) {
   input.addEventListener('blur', () => finish(true));
 }
 
+// --- Relais universel : prompt UniChat → service choisi ---
+
+// Le prompt vit dans UniChat (jamais lu depuis les sites, E2EE respecté) et
+// est mémorisé localement pour survivre à la fermeture de la modal.
+const RELAY_KEY = 'unichat.relay.prompt';
+let toastTimer = null;
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 4500);
+}
+
+function renderRelayList() {
+  const listEl = $('#relay-list');
+  listEl.innerHTML = '';
+  const enabled = services.filter((s) => s.enabled !== false);
+  for (const svc of enabled) {
+    const btn = document.createElement('button');
+    btn.className = 'cat-entry relay-entry';
+    btn.title = `Relayer vers ${svc.name}`;
+
+    btn.appendChild(serviceLogo(svc));
+    const name = document.createElement('span');
+    name.className = 'cat-name';
+    name.textContent = svc.name;
+    btn.appendChild(name);
+
+    btn.addEventListener('click', () => relayTo(svc));
+    listEl.appendChild(btn);
+  }
+}
+
+// Copie le prompt dans le presse-papiers, bascule sur le service, ferme la
+// modal : l'utilisateur colle (Ctrl+V) et envoie. Aucun sélecteur de site.
+async function relayTo(svc) {
+  const text = $('#relay-text').value.trim();
+  if (!text) {
+    $('#relay-text').focus();
+    return;
+  }
+  localStorage.setItem(RELAY_KEY, text);
+  await api.relayCopy(text);
+  closeRelay();
+  activeServiceId = svc.id;
+  api.showService(svc.id);
+  render();
+  toast(`Prompt copié — collez-le (Ctrl+V) dans ${svc.name}`);
+}
+
+function openRelay() {
+  $('#relay-text').value = localStorage.getItem(RELAY_KEY) || '';
+  renderRelayList();
+  $('#relay-overlay').classList.remove('hidden');
+  api.setModalOpen(true);
+  $('#relay-text').focus();
+}
+
+function closeRelay() {
+  $('#relay-overlay').classList.add('hidden');
+  api.setModalOpen(false);
+}
+
+$('#relay-open').addEventListener('click', openRelay);
+$('#relay-close').addEventListener('click', closeRelay);
+$('#relay-overlay').addEventListener('click', (e) => {
+  if (e.target === $('#relay-overlay')) closeRelay();
+});
+$('#relay-text').addEventListener('input', (e) => {
+  localStorage.setItem(RELAY_KEY, e.target.value);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#relay-overlay').classList.contains('hidden')) {
+    closeRelay();
+  }
+});
+
 // --- Événements ---
 
 $('#add-service').addEventListener('click', () => openCatalog(false));
@@ -538,6 +636,18 @@ $('#wizard-overlay').addEventListener('click', (e) => {
 });
 $('#svc-name').addEventListener('input', (e) => {
   $('#svc-name-preview').textContent = e.target.value;
+});
+$('#svc-logo-url').addEventListener('input', (e) => {
+  $('#svc-logo').src = e.target.value;
+});
+$('#svc-logo-import').addEventListener('click', async () => {
+  const res = await api.importLogo();
+  if (res.ok) {
+    $('#svc-logo-url').value = res.logo;
+    $('#svc-logo').src = res.logo;
+  } else if (!res.canceled) {
+    alert('Import impossible : ' + (res.error || 'erreur inconnue'));
+  }
 });
 
 $('#remove-delete-session').addEventListener('click', () => {
@@ -578,12 +688,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Raccourcis : Ctrl/Cmd+1..9 change de service, Ctrl/Cmd+K = recherche.
+// Raccourcis : Ctrl/Cmd+1..9 change de service, Ctrl/Cmd+K = recherche,
+// Ctrl/Cmd+P = relais d'une demande.
 document.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
   if (e.key.toLowerCase() === 'k') {
     e.preventDefault();
     $('#search').focus();
+    return;
+  }
+  if (e.key.toLowerCase() === 'p') {
+    e.preventDefault();
+    openRelay();
     return;
   }
   const n = parseInt(e.key, 10);

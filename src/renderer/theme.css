@@ -236,8 +236,9 @@ input { font: inherit; }
 
 #open-external { padding: 2px 8px; border-radius: 4px; }
 #open-external:hover { background: var(--bg-3); color: var(--fg); }
-#manage-services, #export-registry, #import-registry { padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
-#manage-services:hover, #export-registry:hover, #import-registry:hover { background: var(--bg-3); color: var(--fg); }
+#relay-open, #manage-services, #export-registry, #import-registry { padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+#relay-open:hover, #manage-services:hover, #export-registry:hover, #import-registry:hover { background: var(--bg-3); color: var(--fg); }
+#relay-open svg { width: 14px; height: 14px; display: block; }
 
 /* --- Catalogue des services --- */
 
@@ -436,6 +437,21 @@ input { font: inherit; }
   background: var(--bg-3);
 }
 
+/* Logo : champ URL + bouton « Importer… » (copie vers userData/logos/) */
+.logo-row { display: flex; gap: 8px; align-items: stretch; }
+.logo-row input[type="url"] { flex: 1; min-width: 0; }
+.logo-row button {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--fg-dim);
+  font-size: 12.5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.logo-row button:hover { color: var(--fg); border-color: var(--accent); }
+
 .preview {
   display: flex;
   align-items: center;
@@ -487,3 +503,62 @@ input { font: inherit; }
 #service-list::-webkit-scrollbar { width: 8px; }
 #service-list::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
 #service-list::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* --- Relais : prompt UniChat → service choisi --- */
+
+.relay-popup { width: 640px; }
+
+#relay-text {
+  width: 100%;
+  min-height: 96px;
+  margin: 14px 0 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--fg);
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+  user-select: text;
+}
+#relay-text:focus { border-color: var(--accent); }
+#relay-text::placeholder { color: var(--fg-dim); }
+
+#relay-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  max-height: 34vh;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding: 2px;
+  align-content: start;
+}
+#relay-list .cat-entry img, #relay-list .cat-entry .cat-fallback {
+  width: 20px;
+  height: 20px;
+}
+#relay-list::-webkit-scrollbar { width: 8px; }
+#relay-list::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
+
+/* Toast de confirmation (coin bas-gauche : toujours dans la sidebar,
+   jamais recouvert par les WebContentsView). */
+#toast {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 80;
+  max-width: calc(var(--sidebar-w) - 28px);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  border: 1px solid var(--accent);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  color: var(--fg);
+  font-size: 13px;
+  overflow: hidden;
+}

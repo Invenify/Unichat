@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: https: data:; style-src 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: https: data: unichat-logo:; style-src 'self'" />
   <title>UniChat</title>
   <link rel="stylesheet" href="theme.css" />
 </head>
@@ -26,6 +26,9 @@
 
     <footer id="sidebar-footer">
       <span id="active-url"></span>
+      <button id="relay-open" title="Relayer une demande vers un autre service (Ctrl+P)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
       <button id="manage-services" title="Activer / désactiver des services">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -62,6 +65,11 @@
         </div>
         <label for="svc-name">Nom</label>
         <input id="svc-name" type="text" />
+        <label for="svc-logo-url">Logo (URL, ou importez un fichier)</label>
+        <div class="logo-row">
+          <input id="svc-logo-url" type="url" placeholder="https://…/logo.png" />
+          <button id="svc-logo-import" type="button">Importer…</button>
+        </div>
         <label for="svc-accent">Couleur d'accentuation</label>
         <input id="svc-accent" type="color" />
         <label for="svc-accent2">Couleur secondaire</label>
@@ -122,6 +130,27 @@
       </div>
     </div>
   </div>
+
+  <!-- Relais : le prompt est saisi dans UniChat (jamais lu dans les sites),
+       copié vers le presse-papiers du service choisi. L'utilisateur colle
+       (Ctrl+V) et envoie. Règle d'or : zéro sélecteur, marche partout. -->
+  <div id="relay-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="catalog-popup relay-popup">
+      <button id="relay-close" class="catalog-close" title="Fermer (Échap)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2>Relayer une demande</h2>
+      <p class="catalog-sub">
+        Saisissez votre prompt ici, pas dans le site. Cliquez sur un service :
+        le prompt est copié dans le presse-papiers et le service s'affiche.
+        Collez-le (Ctrl+V) et envoyez. Le prompt reste mémorisé dans UniChat.
+      </p>
+      <textarea id="relay-text" rows="5" placeholder="Votre demande…"></textarea>
+      <div id="relay-list"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
 
   <script src="app.js"></script>
 </body>

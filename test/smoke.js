@@ -11,6 +11,7 @@ const convStore = require(path.join(ROOT, 'src/engine/conv-store'));
 const titleTracker = require(path.join(ROOT, 'src/engine/title-tracker'));
 const metadata = require(path.join(ROOT, 'src/main/metadata'));
 const catalog = require(path.join(ROOT, 'src/main/catalog'));
+const logos = require(path.join(ROOT, 'src/main/logos'));
 
 let failures = 0;
 const check = (label, cond) => {
@@ -60,6 +61,24 @@ const check = (label, cond) => {
   const extra = registry.add({ name: 'HuggingChat', url: 'https://huggingface.co/chat', accent: '#ffd21e' });
   registry.remove(extra.id);
   check('remove', registry.get(extra.id) === null);
+
+  // customLogo : le logo choisi dans la modal ✎ prime sur celui du catalogue
+  registry.update(added.id, { logo: 'unichat-logo://f/abc123.png', customLogo: true });
+  check('customLogo persisté', registry.get(added.id).customLogo === true);
+  check('logo importé référencé par le schéma interne', registry.get(added.id).logo === 'unichat-logo://f/abc123.png');
+  check('customLogo désactivable (retour au catalogue)', (registry.update(added.id, { customLogo: false }), registry.get(added.id).customLogo === false));
+
+  // logos : import d'un fichier image (copie vers userData/logos/)
+  const srcPng = path.join(tmp, 'logo-src.png');
+  fs.writeFileSync(srcPng, Buffer.from('89504e470d0a1a0a', 'hex'));
+  const copiedName = logos.importFile(srcPng, path.join(tmp, 'logos'));
+  check('importLogo copie le fichier', !!copiedName && fs.existsSync(path.join(tmp, 'logos', copiedName)));
+  check('importLogo conserve l\'extension', copiedName.endsWith('.png'));
+  check('importLogo génère des noms uniques', logos.importFile(srcPng, path.join(tmp, 'logos')) !== copiedName);
+  const txtPath = path.join(tmp, 'note.txt');
+  fs.writeFileSync(txtPath, 'pas une image');
+  check('importLogo refuse un non-image', logos.importFile(txtPath, path.join(tmp, 'logos')) === null);
+  check('mime par extension', logos.mimeFor('a.png') === 'image/png' && logos.mimeFor('b.svg') === 'image/svg+xml' && logos.mimeFor('c.xyz') === 'application/octet-stream');
 
   // Import du registre : fusion par URL, jamais d'écrasement ni de doublon
   const before = registry.list().length;

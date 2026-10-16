@@ -1,13 +1,14 @@
 // main.js — fenêtre UniChat : sidebar (renderer) + un WebContentsView par
 // service, sessions persistantes, empilées, une seule visible.
 
-const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
 const registry = require('./registry');
 const metadata = require('./metadata');
 const catalog = require('./catalog');
+const logos = require('./logos');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 
@@ -16,6 +17,11 @@ let mainWindow = null;
 const views = new Map(); // serviceId -> WebContentsView
 let activeServiceId = null;
 let modalOpen = false; // modal renderer ouverte → vues masquées (elles couvrent la fenêtre)
+
+// Schéma interne qui sert les logos importés (userData/logos) au renderer.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'unichat-logo', privileges: { secure: true } },
+]);
 
 function layoutViews() {
   if (!mainWindow) return;
@@ -265,6 +271,34 @@ ipcMain.handle('open-external', (_e, url) => {
   if (/^https?:/i.test(url)) shell.openExternal(url);
 });
 
+// Logo personnalisé : copie du fichier choisi vers userData/logos/ et
+// référence « unichat-logo://f/<nom> » servie par le protocole interne.
+ipcMain.handle('import-logo', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Importer un logo',
+    filters: [{ name: 'Images', extensions: logos.EXTENSIONS.map((e) => e.slice(1)) }],
+    properties: ['openFile'],
+  });
+  if (canceled || !filePaths || filePaths.length === 0) return { ok: false, canceled: true };
+  try {
+    const dir = path.join(app.getPath('userData'), 'logos');
+    const name = logos.importFile(filePaths[0], dir);
+    if (!name) return { ok: false, error: 'Format non pris en charge (png, jpg, gif, svg, ico, webp).' };
+    return { ok: true, logo: 'unichat-logo://f/' + name };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+});
+
+// Relais universel : le prompt saisi dans la barre UniChat part dans le
+// presse-papiers ; la vue du service choisi est affichée, l'utilisateur
+// colle (Ctrl+V) et envoie. Aucune lecture du contenu des conversations.
+ipcMain.handle('relay-copy', (_e, text) => {
+  clipboard.writeText(String(text || ''));
+  return true;
+});
+
 // Export du registre : dialogue natif « Enregistrer sous », JSON brut.
 ipcMain.handle('export-registry', async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
@@ -310,6 +344,18 @@ app.whenReady().then(() => {
   const userData = app.getPath('userData');
   registry.init(userData);
   convStore.init(userData);
+
+  // Les logos importés vivent dans userData/logos ; le renderer ne peut pas
+  // y accéder en file:// direct, on les sert via le schéma interne.
+  protocol.handle('unichat-logo', (request) => {
+    try {
+      const name = path.basename(decodeURIComponent(new URL(request.url).pathname));
+      const data = fs.readFileSync(path.join(userData, 'logos', name));
+      return new Response(data, { headers: { 'content-type': logos.mimeFor(name) } });
+    } catch {
+      return new Response('', { status: 404 });
+    }
+  });
 
   // Services enregistrés avant l'existence du catalogue : on leur donne
   // le logo et les exclusions de leur entrée catalogue (par origine).

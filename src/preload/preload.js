@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('unichat', {
   setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),
   addService: (data) => ipcRenderer.invoke('add-service', data),
   updateService: (id, patch) => ipcRenderer.invoke('update-service', id, patch),
+  importLogo: () => ipcRenderer.invoke('import-logo'),
+  relayCopy: (text) => ipcRenderer.invoke('relay-copy', text),
   removeService: (id, keepSession) => ipcRenderer.invoke('remove-service', id, keepSession),
   showService: (id) => ipcRenderer.invoke('show-service', id),
   setModalOpen: (open) => ipcRenderer.invoke('set-modal-open', open),

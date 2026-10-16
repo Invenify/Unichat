@@ -28,7 +28,7 @@ function save() {
   fs.writeFileSync(filePath(), JSON.stringify(services, null, 2));
 }
 
-function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled }) {
+function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled }) {
   return {
     id: 'svc-' + crypto.randomUUID().slice(0, 8),
     name,
@@ -36,6 +36,9 @@ function mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavReg
     accent: accent || '#6c5ce7',
     accent2: accent2 || '#a29bfe',
     logo: logo || null,
+    // customLogo : le logo a été choisi dans la modal ✎ (URL ou fichier
+    // importé) — il prime sur le logo du catalogue.
+    customLogo: customLogo === true,
     excludeRegex: excludeRegex || null,
     blockNavRegex: blockNavRegex || null,
     enabled: enabled !== false,
@@ -55,8 +58,8 @@ function get(id) {
   return services.find((s) => s.id === id) || null;
 }
 
-function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled }) {
-  const svc = mkService({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, enabled });
+function add({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled }) {
+  const svc = mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled });
   services.push(svc);
   save();
   return svc;
@@ -65,7 +68,7 @@ function add({ name, url, accent, accent2, logo, excludeRegex, blockNavRegex, en
 function update(id, patch) {
   const svc = get(id);
   if (!svc) return null;
-  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'excludeRegex', 'blockNavRegex', 'enabled'];
+  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'customLogo', 'excludeRegex', 'blockNavRegex', 'enabled'];
   for (const f of fields) {
     if (patch[f] !== undefined) svc[f] = patch[f];
   }
@@ -95,6 +98,7 @@ function importAll(list) {
         accent: s.accent,
         accent2: s.accent2,
         logo: s.logo,
+        customLogo: s.customLogo,
         excludeRegex: s.excludeRegex,
       })
     );

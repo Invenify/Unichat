@@ -6,8 +6,8 @@
 
 ## 1. État actuel — ce qui est fait
 
-MVP complet + finitions. Tout est committé sur `main`. Dernier commit :
-`df98989` (moteur de titres : même hôte, icônes SVG, logos rétro-remplis).
+MVP complet + finitions. Tout est committé sur `main` (voir `git log` pour
+le dernier commit).
 
 - **Phase 1** : wizard « ajouter par URL » (analyse `<head>` : favicon,
   theme-color, manifest, title), WebContentsView par service, partitions
@@ -77,7 +77,8 @@ MVP complet + finitions. Tout est committé sur `main`. Dernier commit :
 
 - Machine : Bazzite, Node v26 (FlyEnv), l'utilisateur = Hugo.
 - Vérifier : `node --check <fichier>` sur tout .js modifié ;
-  `node test/smoke.js` (34 PASS attendus) ;
+  `node test/smoke.js` (52 PASS attendus, 54 si le réseau répond pour
+  les tests metadata) ;
   boot : `env -u ELECTRON_RUN_AS_NODE timeout 8 npx electron .`
   (exit 124 = pas de crash).
 - **Les données utilisateur ont été réinitialisées le 2026-10-16** à la
@@ -98,18 +99,29 @@ Priorité proposée :
    `conv-store.js` : `remove(serviceId, url)` + `rename(serviceId, url,
    title)` ; IPC `history-remove` / `history-rename` (42 PASS au smoke).
    Le menu contextuel reste dans la sidebar → jamais caché sous les vues.
-2. **#3 — Logo personnalisé** : dans la modal ✎, champ URL de logo +
-   bouton « importer un fichier » (copier dans userData/logos/). Permet de
-   mettre le vrai logo dinosaure de DiDi (l'utilisateur a une image ;
-   la mettre dans `src/renderer/assets/didi.png` et la référencer).
-3. **#1 — Relais d'une demande vers une autre IA** (fonctionnalité vedette,
-   demandée explicitement) :
+2. **#3 — Logo personnalisé — FAIT (2026-10-16)** : la modal ✎/wizard a un
+   champ « Logo (URL, ou importez un fichier) » + bouton « Importer… ».
+   - Import : dialogue natif → copie vers `userData/logos/` (module
+     `src/main/logos.js`, nom aléatoire, png/jpg/gif/svg/ico/webp), servi au
+     renderer via le schéma interne `unichat-logo://f/<nom>` (protocole
+     `protocol.handle`, CSP img-src mise à jour) — le file:// direct vers
+     userData est bloqué par Chromium.
+   - Drapeau `customLogo` dans services.json : le logo changé par
+     l'utilisateur prime sur l'asset du catalogue ; sinon l'asset catalogue
+     reste prioritaire (favicon distante éventuellement morte).
+   - Vidé le champ → retour au logo du catalogue.
+3. **#1 — Relais d'une demande vers une autre IA — FAIT (2026-10-16)**,
+   mode universel (fonctionnalité vedette) :
    - UniChat ne peut PAS lire le contenu des conversations (WebView, E2EE
-     chez Lumo). Le prompt est saisi dans UNE BARRE UNICHAT (pas dans le
-     site) et mémorisé localement.
-   - Mode universel : bouton « Relayer vers [service] » → copie le prompt
-     dans le presse-papiers, bascule sur le service ; l'utilisateur colle
-     (Ctrl+V) et envoie. Zéro sélecteur, marche partout, règle d'or respectée.
+     chez Lumo). Le prompt est saisi dans UNE BARRE UNICHAT (textarea de la
+     modal « Relayer une demande ») et mémorisé dans localStorage
+     (`unichat.relay.prompt`).
+   - Bouton avion en bas de sidebar ou Ctrl/Cmd+P → modal avec le prompt +
+     grille des services activés ; clic sur un service → `clipboard` (IPC
+     `relay-copy` dans le main), bascule sur le service, toast « Prompt
+     copié — collez-le (Ctrl+V) dans X » (coin bas-gauche, dans la sidebar,
+     jamais sous les vues). L'utilisateur colle et envoie. Zéro sélecteur,
+     marche partout.
    - Mode recettes (plus tard) : `recipes/<domaine>.json` avec
      `inputSelector` → collage + envoi automatiques, dégradation silencieuse
      si l'UI change. C'est la « phase 3 » de la feuille de route d'origine.
@@ -128,11 +140,12 @@ Priorité proposée :
 src/
 ├── main/
 │   ├── main.js        # fenêtre, vues par service, IPC, modalOpen, blocage nav
-│   ├── registry.js    # services.json (enabled, excludeRegex, blockNavRegex)
+│   ├── registry.js    # services.json (enabled, customLogo, excludeRegex, blockNavRegex)
 │   ├── catalog.js     # catalogue déclaratif + sameOrigin
-│   └── metadata.js    # analyse auto d'une URL
-├── preload/preload.js # pont IPC (getCatalog, setServiceEnabled, setModalOpen…)
-├── renderer/          # sidebar, wizard, popup catalogue (app.js, theme.css)
+│   ├── metadata.js    # analyse auto d'une URL
+│   └── logos.js       # import d'un logo → userData/logos/ (schéma unichat-logo://)
+├── preload/preload.js # pont IPC (getCatalog, setServiceEnabled, setModalOpen, relayCopy, importLogo…)
+├── renderer/          # sidebar, wizard, popup catalogue, relais (app.js, theme.css)
 ├── engine/
 │   ├── title-tracker.js  # did-navigate/page-title-updated → historique
 │   └── conv-store.js     # history.json (100 % local)
