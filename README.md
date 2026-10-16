@@ -20,6 +20,23 @@ npm start
 - `npm run icon` — génère le logo « licorne qui parle » : `build/icon.png` (512px, converti en .ico/.icns par electron-builder) et `src/renderer/assets/logo.png` (sidebar)
 - `npm run dist:win` — packaging NSIS Windows
 - `npm run dist:mac` — packaging DMG Mac (icônes `build/icon.ico` / `build/icon.icns`)
+- `npm test` — smoke tests desktop (moteur de titres, registre) + mobile (api.js, DOM jsdom)
+
+## Android (Capacitor)
+
+L'UI mobile vit dans `mobile/` (HTML/CSS/JS, mêmes tokens de thème que le
+desktop) et consomme les mêmes modules `src/shared/`. `mobile/api.js` isole
+le stockage (localStorage aujourd'hui, Filesystem/WebView natives ensuite).
+
+```bash
+npm run mobile         # esbuild : mobile/ -> www/ (bundle + logos)
+npm run mobile:sync    # build + copie dans android/
+npm run mobile:open    # ouvrir le projet android/ dans Android Studio
+```
+
+Trois écrans (Chats / Services / Réglages), navigation basse, bottom-sheets
+(catalogue, wizard, menus), thème suivant l'OS ou forcé. Les conversations
+s'afficheront dans une WebView native par service (phase 4).
 
 ## Architecture
 

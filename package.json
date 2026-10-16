@@ -11,7 +11,7 @@
     "mobile": "node scripts/build-mobile.js",
     "mobile:sync": "npm run mobile && cap sync android",
     "mobile:open": "cap open android",
-    "test": "node test/smoke.js",
+    "test": "npm run mobile && node test/smoke.js && node test/mobile-smoke.js && node test/mobile-dom.js",
     "dist:win": "electron-builder --win nsis --x64",
     "dist:mac": "electron-builder --mac dmg --arm64",
     "dist:mac:zip": "electron-builder --mac zip --arm64",
@@ -22,7 +22,8 @@
     "@capacitor/cli": "^8.5.3",
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.3"
   },
   "build": {
     "appId": "com.hugo.unichat",
