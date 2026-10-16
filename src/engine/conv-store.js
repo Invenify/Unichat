@@ -106,4 +106,44 @@ function rename(serviceId, url, title) {
   return existing;
 }
 
-module.exports = { init, upsert, listAll, removeService, remove, rename };
+// Retire un suffixe de marque (stripTitleRegex du service) des titres déjà
+// enregistrés avant l'ajout de la regex. Les titres renommés manuellement
+// ne sont pas touchés. Renvoie le nombre de titres nettoyés.
+function stripTitle(serviceId, regexStr) {
+  let re;
+  try {
+    re = new RegExp(regexStr);
+  } catch {
+    return 0;
+  }
+  let n = 0;
+  for (const e of entries) {
+    if (e.serviceId !== serviceId || e.manual) continue;
+    const t = e.title.replace(re, '').trim();
+    if (t && t !== e.title) {
+      e.title = t;
+      n++;
+    }
+  }
+  if (n > 0) saveSoon();
+  return n;
+}
+
+// Purge des entrées dont l'URL matche une exclusion (excludeRegex du
+// service) : elles n'auraient jamais dû être enregistrées (enregistrées
+// avant l'ajout de la regex). Renvoie le nombre d'entrées retirées.
+function purgeMatching(serviceId, regexStr) {
+  let re;
+  try {
+    re = new RegExp(regexStr);
+  } catch {
+    return 0;
+  }
+  const before = entries.length;
+  entries = entries.filter((e) => e.serviceId !== serviceId || !re.test(e.url));
+  const n = before - entries.length;
+  if (n > 0) saveSoon();
+  return n;
+}
+
+module.exports = { init, upsert, listAll, removeService, remove, rename, stripTitle, purgeMatching };

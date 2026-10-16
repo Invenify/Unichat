@@ -28,7 +28,7 @@ function save() {
   fs.writeFileSync(filePath(), JSON.stringify(services, null, 2));
 }
 
-function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled }) {
+function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, stripTitleRegex, enabled }) {
   return {
     id: 'svc-' + crypto.randomUUID().slice(0, 8),
     name,
@@ -41,6 +41,9 @@ function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex,
     customLogo: customLogo === true,
     excludeRegex: excludeRegex || null,
     blockNavRegex: blockNavRegex || null,
+    // stripTitleRegex : suffixe retiré des titres de page (ex. Open WebUI
+    // « <chat> / Open WebUI » → on garde le nom du chat).
+    stripTitleRegex: stripTitleRegex || null,
     enabled: enabled !== false,
   };
 }
@@ -58,8 +61,8 @@ function get(id) {
   return services.find((s) => s.id === id) || null;
 }
 
-function add({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled }) {
-  const svc = mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, enabled });
+function add({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, stripTitleRegex, enabled }) {
+  const svc = mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, stripTitleRegex, enabled });
   services.push(svc);
   save();
   return svc;
@@ -68,7 +71,7 @@ function add({ name, url, accent, accent2, logo, customLogo, excludeRegex, block
 function update(id, patch) {
   const svc = get(id);
   if (!svc) return null;
-  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'customLogo', 'excludeRegex', 'blockNavRegex', 'enabled'];
+  const fields = ['name', 'url', 'accent', 'accent2', 'logo', 'customLogo', 'excludeRegex', 'blockNavRegex', 'stripTitleRegex', 'enabled'];
   for (const f of fields) {
     if (patch[f] !== undefined) svc[f] = patch[f];
   }
@@ -100,6 +103,7 @@ function importAll(list) {
         logo: s.logo,
         customLogo: s.customLogo,
         excludeRegex: s.excludeRegex,
+        stripTitleRegex: s.stripTitleRegex,
       })
     );
     added++;

@@ -43,9 +43,11 @@ le dernier commit).
    `v2.auth.mistral.ai`, `account.proton.me` ne polluent jamais) ;
 3. pas une page de connexion (`/login|signin|signup|register|auth|connexion`) ;
 4. pas exclue par `excludeRegex` du service (Lumo : `/guest`) ;
-5. pas la racine du service (origine + chemin, paramètres ignorés).
+5. pas la racine du service (origine + chemin, paramètres ignorés) ;
+6. le titre est nettoyé par `stripTitleRegex` du service (DiDi/Open WebUI :
+   `'\s*/\s*Open WebUI$'` → on garde le nom du chat seul).
 
-`isChatUrl` est exporté (utilisé par les tests et la purge d'historique).
+`isChatUrl` et `cleanTitle` sont exportés (tests, purge d'historique).
 
 ## 3. Pièges découverts (à se rappeler)
 
@@ -65,6 +67,13 @@ le dernier commit).
   `/u/<n>/app`). Le patch au boot de main.js propage l'exclusion aux
   services déjà enregistrés (si leur `excludeRegex` est null). Si un autre
   service pollue ainsi (Claude `/new` probable), même recette.
+- **Titres avec suffixe de marque (2026-10-16)** : Open WebUI titre ses
+  pages « <chat> / Open WebUI ». Champ `stripTitleRegex` (catalogue →
+  registre, même propagation au boot que excludeRegex) appliqué par
+  title-tracker (`cleanTitle`). Au boot, main.js auto-nettoie
+  l'historique pré-fixe : `convStore.stripTitle` (titres non manuels) et
+  `convStore.purgeMatching` (entrées qui matchent une excludeRegex) —
+  idempotents. Même recette pour un autre service pollué par son suffixe.
 - **Correspondance par origine** (pas URL exacte) entre registre et
   catalogue, sinon doublon « Euria perso » (à cause du paramètre d'URL).
 - **Favicons** : certains sites bloquent curl (403) mais pas le renderer ;

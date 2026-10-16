@@ -365,7 +365,18 @@ app.whenReady().then(() => {
     const patch = {};
     if (!svc.logo && entry.logo) patch.logo = entry.logo;
     if (!svc.excludeRegex && entry.excludeRegex) patch.excludeRegex = entry.excludeRegex;
+    if (!svc.stripTitleRegex && entry.stripTitleRegex) patch.stripTitleRegex = entry.stripTitleRegex;
     if (Object.keys(patch).length > 0) registry.update(svc.id, patch);
+  }
+
+  // Nettoyage au boot des historiques pré-fixes — idempotent :
+  // - stripTitleRegex : retire le suffixe de marque des titres (ex. « /
+  //   Open WebUI »), sans toucher aux titres renommés manuellement ;
+  // - excludeRegex : purge les entrées qui matchent (ex. page liste
+  //   Gemini /app enregistrée avant l'exclusion).
+  for (const svc of registry.list()) {
+    if (svc.stripTitleRegex) convStore.stripTitle(svc.id, svc.stripTitleRegex);
+    if (svc.excludeRegex) convStore.purgeMatching(svc.id, svc.excludeRegex);
   }
 
   createWindow();

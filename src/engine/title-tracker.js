@@ -49,12 +49,26 @@ function isChatUrl(service, url) {
   return !isRoot(service.url, url);
 }
 
+// Suffixe de marque dans le titre de page (ex. Open WebUI « Hello /
+// Open WebUI ») : le champ stripTitleRegex du service le retire, le nom
+// de la conversation prime. Si la regex vide le titre, on le garde tel quel.
+function cleanTitle(service, title) {
+  if (!service.stripTitleRegex) return title;
+  try {
+    const t = title.replace(new RegExp(service.stripTitleRegex), '').trim();
+    return t || title;
+  } catch {
+    // regex invalide : titre intact
+    return title;
+  }
+}
+
 // À chaque navigation et à chaque changement de titre de la page.
 function attach(webContents, service, onChange) {
   const record = (url, title) => {
     if (!url || !title) return;
     if (!isChatUrl(service, url)) return;
-    const entry = convStore.upsert(service.id, url, title);
+    const entry = convStore.upsert(service.id, url, cleanTitle(service, title));
     if (entry && onChange) onChange(entry);
   };
 
@@ -70,4 +84,4 @@ function attach(webContents, service, onChange) {
   record(webContents.getURL(), webContents.getTitle());
 }
 
-module.exports = { attach, isChatUrl };
+module.exports = { attach, isChatUrl, cleanTitle };

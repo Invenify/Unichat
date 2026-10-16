@@ -68,6 +68,14 @@ const check = (label, cond) => {
   check('logo importé référencé par le schéma interne', registry.get(added.id).logo === 'unichat-logo://f/abc123.png');
   check('customLogo désactivable (retour au catalogue)', (registry.update(added.id, { customLogo: false }), registry.get(added.id).customLogo === false));
 
+  // stripTitleRegex : suffixe de marque retiré des titres (DiDi / Open WebUI)
+  check('DiDi retire « / Open WebUI » du titre', titleTracker.cleanTitle(didi, 'meteo montreal / Open WebUI') === 'meteo montreal');
+  check('titre sans suffixe intact', titleTracker.cleanTitle(didi, 'Hello') === 'Hello');
+  check('titre réduit au suffixe → conservé', titleTracker.cleanTitle(didi, ' / Open WebUI') === ' / Open WebUI');
+  check('service sans regex → titre intact', titleTracker.cleanTitle({ stripTitleRegex: null }, 'Hello / Open WebUI') === 'Hello / Open WebUI');
+  registry.update(added.id, { stripTitleRegex: '\\s*-\\s*X$' });
+  check('stripTitleRegex persisté', registry.get(added.id).stripTitleRegex === '\\s*-\\s*X$');
+
   // logos : import d'un fichier image (copie vers userData/logos/)
   const srcPng = path.join(tmp, 'logo-src.png');
   fs.writeFileSync(srcPng, Buffer.from('89504e470d0a1a0a', 'hex'));
@@ -118,6 +126,25 @@ const check = (label, cond) => {
   check('remove retire une entrée', convStore.listAll().length === 0);
   convStore.remove(svc.id, svc.url + '/chat/abc');
   check('remove entrée absente sans erreur', convStore.listAll().length === 0);
+
+  // conv-store : stripTitle (nettoyage au boot des titres avec suffixe)
+  convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/abc', 'Hello / Open WebUI');
+  convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/def', 'meteo montreal / Open WebUI');
+  convStore.rename('svc-test', 'https://chat.nexio.ovh/c/def', 'Mon titre');
+  check('stripTitle nettoie les titres auto', convStore.stripTitle('svc-test', '\\s*/\\s*Open WebUI$') === 1);
+  const stripAll = convStore.listAll();
+  check('suffixe retiré du titre', stripAll.find((e) => e.url.endsWith('/c/abc')).title === 'Hello');
+  check('titre manuel épargné', stripAll.find((e) => e.url.endsWith('/c/def')).title === 'Mon titre');
+  check('stripTitle idempotent (2e passage → 0)', convStore.stripTitle('svc-test', '\\s*/\\s*Open WebUI$') === 0);
+  convStore.removeService('svc-test');
+
+  // conv-store : purgeMatching (entrées exclues enregistrées avant l'exclusion)
+  convStore.upsert('svc-test', 'https://gemini.google.com/app', 'Google Gemini');
+  convStore.upsert('svc-test', 'https://gemini.google.com/app/abc', 'Mon chat');
+  check('purgeMatching retire les entrées exclues', convStore.purgeMatching('svc-test', '/app$') === 1);
+  check('purgeMatching garde le reste', convStore.listAll().every((e) => e.url.endsWith('/app/abc')));
+  check('purgeMatching idempotent (2e passage → 0)', convStore.purgeMatching('svc-test', '/app$') === 0);
+  convStore.removeService('svc-test');
 
   // title-tracker : filtres racine / exclusions / https
   let captured = null;
