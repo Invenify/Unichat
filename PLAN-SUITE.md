@@ -91,10 +91,13 @@ MVP complet + finitions. Tout est committé sur `main`. Dernier commit :
 
 Priorité proposée :
 
-1. **#2 — Gérer l'historique** : clic droit (ou bouton au survol) sur une
-   entrée → « Retirer de la liste » (supprimer l'entrée du store) et
-   « Renommer » (titre manuel). Facile, robuste. `conv-store.js` :
-   ajouter `remove(serviceId, url)` + `rename(serviceId, url, title)`.
+1. **#2 — Gérer l'historique — FAIT (2026-10-16)** : clic droit sur une
+   entrée → menu « Renommer » (édition inline, Enter valide, Échap annule,
+   le titre manuel ne sera plus écrasé par le titre de la page grâce au
+   champ `manual` dans history.json) et « Retirer de la liste ».
+   `conv-store.js` : `remove(serviceId, url)` + `rename(serviceId, url,
+   title)` ; IPC `history-remove` / `history-rename` (42 PASS au smoke).
+   Le menu contextuel reste dans la sidebar → jamais caché sous les vues.
 2. **#3 — Logo personnalisé** : dans la modal ✎, champ URL de logo +
    bouton « importer un fichier » (copier dans userData/logos/). Permet de
    mettre le vrai logo dinosaure de DiDI (l'utilisateur a une image ;

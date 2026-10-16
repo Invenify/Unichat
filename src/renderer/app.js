@@ -142,6 +142,7 @@ function render() {
       const btn = document.createElement('button');
       btn.className = 'chat-entry';
       btn.title = entry.title;
+      btn.dataset.historyUrl = entry.url;
 
       const dot = document.createElement('span');
       dot.className = 'dot';
@@ -162,6 +163,15 @@ function render() {
         api.navigate(svc.id, entry.url);
         render();
       });
+
+      // Clic droit : renommer (titre manuel) ou retirer de la liste.
+      // Le menu reste dans la sidebar : jamais caché sous les WebContentsView.
+      btn.addEventListener('contextmenu', (ev) => {
+        ev.preventDefault();
+        closeEntryMenu();
+        openEntryMenu(entry, ev.clientX, ev.clientY);
+      });
+
       group.appendChild(btn);
     }
 
@@ -418,6 +428,85 @@ async function importRegistry() {
   }
 }
 
+// --- Historique : menu contextuel + renommage inline ---
+
+let entryMenu = null;
+
+function closeEntryMenu() {
+  if (entryMenu) {
+    entryMenu.remove();
+    entryMenu = null;
+  }
+}
+
+function openEntryMenu(entry, x, y) {
+  closeEntryMenu();
+  entryMenu = document.createElement('div');
+  entryMenu.className = 'entry-menu';
+
+  const rename = document.createElement('button');
+  rename.textContent = 'Renommer';
+  rename.addEventListener('click', () => {
+    closeEntryMenu();
+    startRename(entry);
+  });
+  entryMenu.appendChild(rename);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.textContent = 'Retirer de la liste';
+  removeBtn.className = 'danger';
+  removeBtn.addEventListener('click', () => {
+    closeEntryMenu();
+    api.removeHistoryEntry(entry.serviceId, entry.url);
+  });
+  entryMenu.appendChild(removeBtn);
+
+  document.body.appendChild(entryMenu);
+  // Clamp dans la sidebar (les WebContentsView commencent à sa droite).
+  const sb = $('#sidebar').getBoundingClientRect();
+  const rect = entryMenu.getBoundingClientRect();
+  entryMenu.style.left = Math.max(4, Math.min(x, sb.right - rect.width - 6)) + 'px';
+  entryMenu.style.top = Math.max(4, Math.min(y, window.innerHeight - rect.height - 6)) + 'px';
+}
+
+// Retrouve le bouton vivant dans la liste (un render() a pu reconstruire
+// le DOM entre l'ouverture du menu et le clic sur « Renommer »).
+function findEntryBtn(entry) {
+  return [...document.querySelectorAll('.chat-entry')].find(
+    (b) => b.dataset.historyUrl === entry.url
+  );
+}
+
+function startRename(entry) {
+  const btn = findEntryBtn(entry);
+  if (!btn) return;
+  const input = document.createElement('input');
+  input.className = 'chat-rename';
+  input.value = entry.title;
+  btn.querySelector('.chat-title').replaceWith(input);
+  input.focus();
+  input.select();
+
+  let done = false;
+  const finish = (save) => {
+    if (done) return;
+    done = true;
+    const value = input.value.trim();
+    if (save && value && value !== entry.title) {
+      api.renameHistoryEntry(entry.serviceId, entry.url, value);
+    } else {
+      render();
+    }
+  };
+
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') finish(true);
+    else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+}
+
 // --- Événements ---
 
 $('#add-service').addEventListener('click', () => openCatalog(false));
@@ -490,6 +579,16 @@ document.addEventListener('keydown', (e) => {
     render();
   }
 });
+
+// Fermeture du menu contextuel d'historique : clic ailleurs, Échap,
+// perte de focus de la fenêtre.
+document.addEventListener('click', (e) => {
+  if (entryMenu && !entryMenu.contains(e.target)) closeEntryMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeEntryMenu();
+});
+window.addEventListener('blur', closeEntryMenu);
 
 // --- Abonnements au process principal ---
 

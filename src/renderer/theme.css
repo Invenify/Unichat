@@ -179,6 +179,42 @@ input { font: inherit; }
 
 .chat-entry .chat-date { font-size: 11px; color: var(--fg-dim); flex-shrink: 0; }
 
+/* Renommage inline d'une entrée (Enter valide, Échap annule) */
+.chat-entry .chat-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  background: var(--bg-3);
+  color: var(--fg);
+  outline: none;
+  font-size: 13px;
+}
+
+/* Menu contextuel d'une entrée d'historique (clic droit).
+   Toujours dans la sidebar : jamais recouvert par les WebContentsView. */
+.entry-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 170px;
+  padding: 4px;
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+}
+.entry-menu button {
+  padding: 7px 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 13px;
+}
+.entry-menu button:hover { background: var(--bg-3); }
+.entry-menu button.danger:hover { color: #ff6b6b; }
+
 /* --- Footer --- */
 
 #sidebar-footer {

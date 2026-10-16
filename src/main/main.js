@@ -171,6 +171,16 @@ function createWindow() {
 
 ipcMain.handle('get-services', () => registry.list());
 ipcMain.handle('get-history', () => convStore.listAll());
+ipcMain.handle('history-remove', (_e, serviceId, url) => {
+  convStore.remove(serviceId, url);
+  pushHistory();
+  return true;
+});
+ipcMain.handle('history-rename', (_e, serviceId, url, title) => {
+  const entry = convStore.rename(serviceId, url, title);
+  pushHistory();
+  return entry || null;
+});
 ipcMain.handle('analyze-url', (_e, url) => metadata.analyzeUrl(url));
 
 ipcMain.handle('get-catalog', () => catalog.list());

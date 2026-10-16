@@ -83,6 +83,21 @@ const check = (label, cond) => {
   convStore.removeService(svc.id);
   check("removeService vide l'historique", convStore.listAll().length === 0);
 
+  // conv-store : remove/rename d'une entrée (clic droit dans la sidebar)
+  convStore.upsert(svc.id, svc.url + '/chat/abc', 'Titre auto');
+  convStore.rename(svc.id, svc.url + '/chat/abc#frag', 'Titre manuel'); // normalisation : #frag ignoré
+  let renamed = convStore.listAll()[0];
+  check('rename change le titre', renamed.title === 'Titre manuel');
+  check('rename marque manuel', renamed.manual === true);
+  convStore.upsert(svc.id, svc.url + '/chat/abc', 'Nouveau titre de la page');
+  check('titre manuel résiste à la page', convStore.listAll()[0].title === 'Titre manuel');
+  check('rename entrée inconnue → null', convStore.rename(svc.id, svc.url + '/chat/zzz', 'X') === null);
+  check('rename titre vide → null', convStore.rename(svc.id, svc.url + '/chat/abc', '') === null);
+  convStore.remove(svc.id, svc.url + '/chat/abc#frag'); // normalisation : le fragment est ignoré
+  check('remove retire une entrée', convStore.listAll().length === 0);
+  convStore.remove(svc.id, svc.url + '/chat/abc');
+  check('remove entrée absente sans erreur', convStore.listAll().length === 0);
+
   // title-tracker : filtres racine / exclusions / https
   let captured = null;
   const fakeWC = {

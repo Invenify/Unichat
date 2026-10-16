@@ -45,12 +45,11 @@ function upsert(serviceId, url, title) {
   const existing = entries.find((e) => key(e.serviceId, e.url) === key(serviceId, url_));
   const now = Date.now();
   if (existing) {
-    if (existing.title === title) {
-      existing.updatedAt = now;
-    } else {
+    // Titre renommé manuellement (manual) : il ne suit plus la page.
+    if (!existing.manual && existing.title !== title) {
       existing.title = title;
-      existing.updatedAt = now;
     }
+    existing.updatedAt = now;
     saveSoon();
     return existing;
   }
@@ -85,4 +84,26 @@ function removeService(serviceId) {
   saveSoon();
 }
 
-module.exports = { init, upsert, listAll, removeService };
+// Retire UNE entrée de l'historique (clic droit « Retirer de la liste »).
+function remove(serviceId, url) {
+  const target = key(serviceId, normalize(url));
+  const before = entries.length;
+  entries = entries.filter((e) => key(e.serviceId, e.url) !== target);
+  if (entries.length !== before) saveSoon();
+}
+
+// Titre manuel : marque l'entrée « manual » pour que le titre de la page
+// ne l'écrase plus lors des upserts suivants.
+function rename(serviceId, url, title) {
+  if (!title) return null;
+  const target = key(serviceId, normalize(url));
+  const existing = entries.find((e) => key(e.serviceId, e.url) === target);
+  if (!existing) return null;
+  existing.title = title;
+  existing.manual = true;
+  existing.updatedAt = Date.now();
+  saveSoon();
+  return existing;
+}
+
+module.exports = { init, upsert, listAll, removeService, remove, rename };

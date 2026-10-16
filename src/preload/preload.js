@@ -5,6 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('unichat', {
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
+  removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),
+  renameHistoryEntry: (serviceId, url, title) => ipcRenderer.invoke('history-rename', serviceId, url, title),
   analyzeUrl: (url) => ipcRenderer.invoke('analyze-url', url),
   getCatalog: () => ipcRenderer.invoke('get-catalog'),
   setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),
