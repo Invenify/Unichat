@@ -19,7 +19,7 @@ le dernier commit).
 - **Phase 4** : édition d'un service (✎ : nom, couleurs, URL, exclusions,
   regex de blocage), export/import du registre (dialogues natifs, fusion
   par URL), barre d'adresse dynamique (URL courante de la vue active).
-- **Catalogue** (`src/main/catalog.js`, déclaratif, 20 services : ChatGPT,
+- **Catalogue** (`src/shared/catalog.js`, déclaratif, 20 services : ChatGPT,
   Claude, Gemini, Copilot, Perplexity, Le Chat, Euria, Lumo, Grok,
   DeepSeek, HuggingChat, Poe, Qwen, Kimi, Meta AI, Character.AI, You.com,
   Z.ai, Pi, **DiDi** = chat.nexio.ovh, vert #3aa14d).
@@ -168,25 +168,117 @@ Priorité proposée :
 7. **#9 — Packaging réel** : `npm run dist:win` / `dist:mac` jamais testés
    (icône OK : electron-builder convertit `build/icon.png`). Tester un
    vrai build.
-8. **#10 — Android via Capacitor** (phase 6 du plan d'origine).
+8. **#10 — Android via Capacitor — EN COURS (2026-10-16)** : voir la
+   section 7 « Android » ci-dessous (phases 1–3 faites, 4–7 à faire).
 
 ## 6. Architecture (rappel rapide)
 
 ```
 src/
+├── shared/            # PORTABLE desktop + Android (zéro API Node/Electron)
+│   ├── title-rules.js # isRoot, isAuthUrl, isChatUrl, cleanTitle
+│   ├── catalog.js      # catalogue déclaratif + sameOrigin
+│   └── service.js      # mkService, importable (fusion par URL), newId
 ├── main/
 │   ├── main.js        # fenêtre, vues par service, IPC, modalOpen, blocage nav
 │   ├── registry.js    # services.json (enabled, customLogo, excludeRegex, blockNavRegex)
-│   ├── catalog.js     # catalogue déclaratif + sameOrigin
 │   ├── metadata.js    # analyse auto d'une URL
 │   └── logos.js       # import d'un logo → userData/logos/ (schéma unichat-logo://)
 ├── preload/preload.js # pont IPC (getCatalog, setServiceEnabled, setModalOpen, relayCopy, importLogo…)
 ├── renderer/          # sidebar, wizard, popup catalogue, relais (app.js, theme.css)
 ├── engine/
-│   ├── title-tracker.js  # did-navigate/page-title-updated → historique
+│   ├── title-tracker.js  # did-navigate/page-title-updated → historique (règles dans shared/)
 │   └── conv-store.js     # history.json (100 % local)
 └── scripts/make-icon.js   # logo licorne (pur Node)
 ```
 
 Données : `~/.config/unichat/` → `services.json`, `history.json`,
 partitions `Partitions/persist:<id>`.
+
+## 7. Android (Capacitor) — plan et état
+
+> Décision de l'utilisateur (2026-10-16) : **un seul dépôt** (monorepo),
+> frontières = dossiers. Ordre des phases : UI propre d'abord (1→2→3→4→5→6→7).
+
+### Décisions structurantes
+
+- **Capacitor 8.5** (appId `com.hugo.unichat`, appName UniChat, webDir `www`).
+- **UI mobile** dans `mobile/` (index.html, theme.css, app.js, api.js),
+  bundlée par **esbuild** vers `www/` (résout les modules CJS de `src/shared/`
+  sans autre outil). `www/` est gitignoré (généré) ; `android/` est committé.
+- **`mobile/api.js`** = façade async unique entre l'UI et le stockage.
+  Aujourd'hui : localStorage (`unichat.services`, `unichat.history`,
+  `unichat.theme`). Les phases 4–6 remplaceront l'INTÉRIEUR de cette façade
+  (plugin natif WebView, Filesystem, HTTP natif) SANS toucher à l'UI.
+- **Mêmes règles métier** que le desktop : l'UI mobile appelle
+  `isChatUrl`/`cleanTitle` (`src/shared/title-rules.js`) dans
+  `api.recordNavigation` — les 6 règles du moteur de titres s'appliquent.
+- **Thème** : `prefers-color-scheme` (la WebView Android suit l'OS) +
+  `data-theme="light|dark"` sur `<html>` pour le forçage manuel.
+
+### Fait (commits sur main)
+
+- **A1 — shared/** (`0038951`) : extraction title-rules / catalog / service ;
+  desktop et `test/smoke.js` repointés ; `src/main/catalog.js` supprimé
+  (`scripts/fetch-logos.js` aussi).
+- **A2 — socle Capacitor** (`9ab4500`) : `cap init` + `cap add android`,
+  `scripts/build-mobile.js`, scripts npm `mobile`, `mobile:sync`, `mobile:open`.
+- **A3 — UI mobile** (`f28ca5d`) : 3 écrans (Chats / Services / Réglages),
+  nav basse, bottom-sheets (catalogue + onboarding 1er lancement, wizard
+  « Analyser → confirmer », menus ⋮ service/chat), recherche, épingle (SVG),
+  renommage inline, switch activer/désactiver, suppression (session
+  conservable — la purge cookies arrive en A4), export presse-papiers /
+  import fichier, thème. Placeholder WebView (`#webview-holder`) : la vue
+  native viendra dedans (A4).
+  - Tests : `npm test` = smoke desktop + `test/mobile-smoke.js` (api.js,
+    23 PASS) + `test/mobile-dom.js` (jsdom, 22 PASS — charge le `www/` réel).
+
+### À faire (phases restantes)
+
+- **A4 — plugin natif multi-WebView (Kotlin)** : plugin Capacitor
+  `UniChatWebViews` — une WebView par service dans `#webview-slot` ;
+  `WebChromeClient.onReceivedTitle` / `onPageFinished` → events JS →
+  `api.recordNavigation(svc, url, title)` → `renderChats()`.
+  `onBackPressed` → `goBack()` / fermer sheet. blockNavRegex →
+  `shouldOverrideUrlLoading`. « Déconnecter » = purge cookies du domaine
+  (`CookieManager`, scopé par domaine — WebViewProfile en option plus
+  tard). Sessions conservées entre lancements : cookies persistants.
+- **A5 — stockage** : migrer `mobile/api.js` de localStorage vers
+  `@capacitor/filesystem` (mêmes schémas JSON, migration des données
+  existantes au 1er lancement). Export → share sheet Android.
+- **A6 — métadonnées** : `analyzeUrl` via fetch natif (plugin HTTP ou le
+  plugin A4) — favicon, theme-color, manifest, titre (pas de CORS).
+  Réimplémente `src/main/metadata.js` côté natif ; le fallback catalogue
+  actuel reste utile hors ligne.
+- **A7 — build** : icônes launcher Android depuis `build/icon.png`
+  (pas d'ImageMagick dans le bac à sable — régénérer par SDF aux tailles
+  cibles dans `scripts/make-icon.js`, ou capacitor-assets), splash,
+  `dist:apk` / `dist:aab` (gradle assembleRelease), signature.
+
+### Pièges / notes Android
+
+- **Le bac à sable agent n'a NI Java NI SDK Android** : `cap sync` marche,
+  mais la compilation Kotlin ne peut être vérifiée que sur la machine
+  d'Hugo (Android Studio). A4–A7 sont écrits à l'aveugle tant que Hugo
+  n'a pas compilé.
+- **Décision en attente (2026-10-16)** : Hugo valide l'UI de A3 sur
+  appareil/émulateur AVANT qu'on écrive A4, ou A4 est écrit à l'aveugle
+  directement. Recommandation agent : valider A3 d'abord.
+- jsdom refuse localStorage sur origine `file://` → test DOM avec
+  `url: 'https://localhost/index.html'`.
+- Firefox headless du bac à sable : lancer avec `LD_LIBRARY_PATH=` vidé
+  (conflit GLIBCXX avec l'extension VSCode).
+- Normalisation d'URL mobile identique au desktop (fragment ignoré) :
+  `api.normUrl` ; le champ `manual` résiste au titre de page (même logique
+  que conv-store).
+- Z-order modales : PAS le piège desktop — les WebView natives sont des
+  vues Android, l'UI Capacitor passe au-dessus via `#webview-holder`
+  (z-index). La règle `setModalOpen` n'existe pas côté mobile.
+
+### Boucle de dev Android
+
+```bash
+npm test            # tout : desktop + mobile api + DOM (rebuild www/ inclus)
+npm run mobile:sync # build www/ + copie android/
+npm run mobile:open  # Android Studio → Run
+```
