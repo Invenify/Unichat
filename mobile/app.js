@@ -3,6 +3,7 @@
 // métier vit dans src/shared/, le stockage derrière mobile/api.js.
 
 import { api, catalogList, sameOrigin } from './api.js';
+import { webviews } from './webviews.js';
 
 const $ = (sel) => document.querySelector(sel);
 const SVG = {
@@ -42,6 +43,7 @@ function toast(msg) {
 // --- Bottom-sheets ---
 
 function openSheet(id) {
+  if (wvOpen) webviews.hide(); // une WebView native couvrirait le sheet
   $('#sheet-overlay').classList.remove('hidden');
   $(id).classList.remove('hidden');
 }
@@ -49,6 +51,7 @@ function openSheet(id) {
 function closeSheets() {
   $('#sheet-overlay').classList.add('hidden');
   document.querySelectorAll('.sheet').forEach((s) => s.classList.add('hidden'));
+  if (wvOpen) webviews.show();
 }
 
 $('#sheet-overlay').addEventListener('click', closeSheets);
@@ -255,9 +258,10 @@ function serviceMenu(svc) {
 }
 
 async function removeService(svc, dropSession) {
+  if (dropSession) await webviews.clearSession(svc.url); // cookies + stockage du domaine
+  await webviews.destroy(svc.id); // la WebView éventuelle du service
   await api.removeService(svc.id);
   await api.removeServiceHistory(svc.id);
-  // dropSession (purge des cookies du domaine) : phase 4, plugin natif.
   toast(`« ${svc.name} » supprimé${dropSession ? ' et déconnecté' : ' (session conservée)'}.`);
   await reload();
 }
@@ -341,21 +345,68 @@ $('#wizard-next').addEventListener('click', async () => {
 
 $('#wizard-cancel').addEventListener('click', closeSheets);
 
-// --- Vue service : la WebView native (phase 4) s'affichera dans le slot ---
+// --- Vue service : la WebView native (plugin UniChatWebViews) vit dans le
+// slot #webview-slot, positionnée par géométrie CSS transmise au natif.
+// Sans plugin (navigateur, tests) : placeholder. ---
+
+let wvOpen = false;
+let wvToken = 0; // évite la course ouvrir/fermer (retour immédiat)
+
+function slotRect() {
+  const r = $('#webview-slot').getBoundingClientRect();
+  return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+}
+
+function syncGeometry() {
+  if (wvOpen) webviews.position(slotRect());
+}
 
 function openWebView(svc, url) {
+  const token = ++wvToken;
   $('#webview-title').textContent = svc.name;
   const img = $('#webview-logo');
   const src = svc.customLogo && svc.logo ? svc.logo : catalogLogoFor(svc.url) || svc.logo;
   if (src) { img.src = src; img.classList.remove('hidden'); } else img.classList.add('hidden');
-  $('#webview-slot').innerHTML = `<span>Vue « ${escapeHtml(svc.name)} » — ${escapeHtml(url)}<br><br>La WebView native s'affichera ici (phase 4).</span>`;
+  $('#webview-slot').innerHTML = webviews.available()
+    ? ''
+    : `<span>Vue « ${escapeHtml(svc.name)} » — ${escapeHtml(url)}<br><br>La WebView native est disponible sur l'app Android uniquement.</span>`;
   $('#webview-holder').classList.remove('hidden');
-  // Phase 4 : plugin natif — createWebView(svc.id, url), events titre →
-  // api.recordNavigation(svc, url, title) puis renderChats().
+  wvOpen = true;
+  // Le holder vient d'être affiché : mesurer le slot puis ouvrir la vue.
+  requestAnimationFrame(async () => {
+    if (token !== wvToken) return; // fermé entre-temps
+    await webviews.open(svc, url, slotRect());
+  });
 }
 
-$('#webview-back').addEventListener('click', () => {
+async function closeWebView() {
+  wvToken++;
   $('#webview-holder').classList.add('hidden');
+  wvOpen = false;
+  await webviews.close();
+}
+
+$('#webview-back').addEventListener('click', closeWebView);
+
+// La vue native est recadrée quand le viewport change (clavier, rotation,
+// insets) — la géométrie du slot est repoussée au plugin.
+window.addEventListener('resize', syncGeometry);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', syncGeometry);
+
+// Events du plugin : titre/URL de page → moteur d'historique ; fermeture par
+// le retour système → recacher le holder.
+webviews.onPage(async (ev) => {
+  const svc = services.find((s) => s.id === ev.id);
+  if (!svc) return;
+  const saved = await api.recordNavigation(svc, ev.url, ev.title);
+  if (saved) {
+    history = await api.getHistory();
+    renderChats();
+  }
+});
+
+webviews.onClosed(() => {
+  if (wvOpen) closeWebView();
 });
 
 // --- Réglages : thème, export, import ---

@@ -79,6 +79,21 @@ const check = (label, cond) => {
   await api.removeService(svc.id);
   check('removeService retire le service', (await api.getServices()).every((s) => s.id !== svc.id));
 
+  // Façade webviews (mobile/webviews.js) : sans Capacitor natif, tout est
+  // no-op/false et aucune méthode ne lève — l'UI reste utilisable.
+  const { webviews, nativeWebViews } = await import(path.join(__dirname, '..', 'mobile', 'webviews.js'));
+  check('webviews non disponible hors natif', nativeWebViews() === false && webviews.available() === false);
+  check('open → false sans plugin', (await webviews.open({ id: 'x' }, 'https://a.com', { x: 0, y: 0, w: 1, h: 1 })) === false);
+  await webviews.position({ x: 0, y: 0, w: 1, h: 1 });
+  await webviews.close();
+  await webviews.hide();
+  await webviews.show();
+  check('close/hide/show/position no-ops sans erreur', true);
+  await webviews.clearSession('https://a.com');
+  await webviews.destroy('x');
+  check('clearSession/destroy no-ops sans erreur', true);
+  check('onPage/onClosed retournent un désabonnement', typeof webviews.onPage(() => {}) === 'function' && typeof webviews.onClosed(() => {}) === 'function');
+
   console.log(failures === 0 ? 'ALL MOBILE TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);
 })();

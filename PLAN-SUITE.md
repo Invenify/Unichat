@@ -169,7 +169,8 @@ Priorité proposée :
    (icône OK : electron-builder convertit `build/icon.png`). Tester un
    vrai build.
 8. **#10 — Android via Capacitor — EN COURS (2026-10-16)** : voir la
-   section 7 « Android » ci-dessous (phases 1–3 faites, 4–7 à faire).
+   section 7 « Android » ci-dessous (phases 1–4 faites, 5–7 à faire ;
+   A4 écrit à l'aveugle, à compiler sur la machine d'Hugo).
 
 ## 6. Architecture (rappel rapide)
 
@@ -232,17 +233,50 @@ partitions `Partitions/persist:<id>`.
   native viendra dedans (A4).
   - Tests : `npm test` = smoke desktop + `test/mobile-smoke.js` (api.js,
     23 PASS) + `test/mobile-dom.js` (jsdom, 22 PASS — charge le `www/` réel).
+  - **A3 validé sur appareil par Hugo (2026-10-16).**
+- **A4 — plugin natif multi-WebView (2026-10-16)** :
+  - `android/app/src/main/java/com/hugo/unichat/UniChatWebViews.kt` :
+    une `WebView` par service (map id → vue, créée au 1er `open`, gardée
+    vivante en arrière-plan), ajoutée au conteneur du pont Capacitor
+    (par-dessus le DOM), positionnée sur le rect CSS de `#webview-slot`
+    (x/y/w/h transmis par le JS × densité ; repositionnée via
+    `position()` sur resize + un `OnLayoutChangeListener` sur la WebView
+    Capacitor — clavier/rotation/insets).
+  - Events → JS : `onReceivedTitle` + `onPageFinished` **et** un poll
+    `evaluateJavascript` (1,5 s) url+titre — indispensable : les SPA qui
+    changent de chat par pushState ne déclenchent AUCUN événement de
+    navigation sur WebView. JS → `api.recordNavigation` → `renderChats()`.
+    Dédoublonnage par état « url|titre » émis.
+  - `blockNavRegex` → `shouldOverrideUrlLoading` (schémas non-http ouverts
+    via `Intent.ACTION_VIEW`, jamais chargés dans la vue).
+  - `MainActivity.java` : `registerPlugin(UniChatWebViews.class)` AVANT
+    `super.onCreate` + `onBackPressed` → `handleSystemBack()` : retour dans
+    l'historique de la page, sinon fermeture (event `closed` → JS recache
+    le holder). Le bouton ‹ de la barre referme la vue directement.
+  - « Déconnecter » = `clearSession({url})` : expiration de chaque cookie
+    du domaine (les deux variantes hôte et `.domaine`, via `setCookie`
+    Max-Age=0 — pas d'API de suppression scopée) + `WebStorage.deleteOrigin`
+    (localStorage/indexedDB du domaine). Session conservée sinon : cookies
+    persistants, vues gardées en mémoire.
+  - `mobile/webviews.js` : façade unique vers le plugin
+    (`Capacitor.Plugins.UniChatWebViews`, repli sur le proxy global). Hors
+    natif (navigateur, jsdom) : no-op silencieux + placeholder — l'UI reste
+    testable. `open/close/hide/show/position/clearSession/destroy/onPage/onClosed`.
+  - Z-order sheets : une vue native COUVRE toujours le DOM (contrairement à
+    ce que disait la note précédente — le z-index CSS ne traverse pas la
+    frontière natif). `openSheet()`/`closeSheets()` appellent donc
+    `webviews.hide()/show()` quand une vue est ouverte (comme le
+    `setModalOpen` du desktop).
+  - Divers : `windowSoftInputMode=adjustResize` (manifest), UA sans
+    `; wv` (certains services filtrent les WebView), assombrissement
+    algorithmique du thème sombre via androidx.webkit (best effort),
+    Kotlin 2.1.21 (classpath racine + `org.jetbrains.kotlin.android` sur
+    le module app), token JS anti-course ouvrir/fermer.
+  - Tests : `mobile-smoke` +6 (façade no-op), `mobile-dom` +3 (placeholder,
+    suppression+déconnexion sans erreur). **Pas compilable dans le bac à
+    sable : premier `mobile:sync` + build Android Studio à faire par Hugo.**
 
 ### À faire (phases restantes)
-
-- **A4 — plugin natif multi-WebView (Kotlin)** : plugin Capacitor
-  `UniChatWebViews` — une WebView par service dans `#webview-slot` ;
-  `WebChromeClient.onReceivedTitle` / `onPageFinished` → events JS →
-  `api.recordNavigation(svc, url, title)` → `renderChats()`.
-  `onBackPressed` → `goBack()` / fermer sheet. blockNavRegex →
-  `shouldOverrideUrlLoading`. « Déconnecter » = purge cookies du domaine
-  (`CookieManager`, scopé par domaine — WebViewProfile en option plus
-  tard). Sessions conservées entre lancements : cookies persistants.
 - **A5 — stockage** : migrer `mobile/api.js` de localStorage vers
   `@capacitor/filesystem` (mêmes schémas JSON, migration des données
   existantes au 1er lancement). Export → share sheet Android.
@@ -259,11 +293,24 @@ partitions `Partitions/persist:<id>`.
 
 - **Le bac à sable agent n'a NI Java NI SDK Android** : `cap sync` marche,
   mais la compilation Kotlin ne peut être vérifiée que sur la machine
-  d'Hugo (Android Studio). A4–A7 sont écrits à l'aveugle tant que Hugo
-  n'a pas compilé.
-- **Décision en attente (2026-10-16)** : Hugo valide l'UI de A3 sur
-  appareil/émulateur AVANT qu'on écrive A4, ou A4 est écrit à l'aveugle
-  directement. Recommandation agent : valider A3 d'abord.
+  d'Hugo (Android Studio). **A4 est écrit à l'aveugle — première chose à
+  faire : `npm run mobile:sync` puis build/run dans Android Studio.** Si
+  `registerPlugin` n'existe pas sous ce nom dans Capacitor 8, c'est la
+  méthode BridgeActivity à vérifier en premier.
+- **À vérifier sur appareil (A4)** : géométrie au clavier (adjustResize +
+  edge-to-edge Android 15 : le slot doit être recalé, les insets au
+  statut de test visuel), blockNavRegex (Euria/kSuite), titres des SPA
+  sur changement de chat (poll), retour système, « Supprimer et
+  déconnecter », et que `Capacitor.Plugins.UniChatWebViews` est bien
+  exposé (sinon le repli placeholder s'affiche → le voir, c'est le
+  signe que le proxy manque).
+- **Cookies partagés** : tous les services partagent le même
+  CookieManager global. Deux services sur le MÊME domaine se
+  déconnecteraient ensemble ; l'isolation par service (comme les
+  partitions desktop) demanderait WebViewProfile — plus tard.
+- `onBackPressed` est déprécié (predictive back, Android 13+) mais
+  fonctionne ; la version propre passe par
+  `OnBackPressedDispatcher` si besoin.
 - jsdom refuse localStorage sur origine `file://` → test DOM avec
   `url: 'https://localhost/index.html'`.
 - Firefox headless du bac à sable : lancer avec `LD_LIBRARY_PATH=` vidé
@@ -271,9 +318,6 @@ partitions `Partitions/persist:<id>`.
 - Normalisation d'URL mobile identique au desktop (fragment ignoré) :
   `api.normUrl` ; le champ `manual` résiste au titre de page (même logique
   que conv-store).
-- Z-order modales : PAS le piège desktop — les WebView natives sont des
-  vues Android, l'UI Capacitor passe au-dessus via `#webview-holder`
-  (z-index). La règle `setModalOpen` n'existe pas côté mobile.
 
 ### Boucle de dev Android
 

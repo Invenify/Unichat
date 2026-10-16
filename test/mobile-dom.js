@@ -83,11 +83,13 @@ const { window } = dom;
   $('#wizard-cancel').dispatchEvent(new window.Event('click', { bubbles: true }));
   check('wizard annulé', !visible('#sheet-wizard'));
 
-  // Vue service : placeholder WebView (la native arrive en phase 4)
+  // Vue service : sans plugin natif (jsdom), placeholder dans le slot
   $('.nav-btn[data-screen="services"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   doc.querySelector('.svc-row').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 60)); // requestAnimationFrame du câblage natif
   check('vue service affichée', visible('#webview-holder'));
   check('titre de la vue = nom du service', $('#webview-title').textContent === 'DiDi');
+  check('placeholder sans plugin natif', $('#webview-slot').textContent.includes('app Android'));
   $('#webview-back').dispatchEvent(new window.Event('click', { bubbles: true }));
   check('retour ferme la vue service', !visible('#webview-holder'));
 
@@ -96,6 +98,21 @@ const { window } = dom;
   await new Promise((r) => setTimeout(r, 20));
   check('catalogue rouvert via ⚙', visible('#sheet-catalog'));
   check('DiDi marqué activé', [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('DiDi')).classList.contains('enabled'));
+  $('#sheet-overlay').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  // Suppression avec déconnexion : la façade native est absente (jsdom) —
+  // clearSession/destroy sont des no-ops, le flux ne lève pas.
+  $('.nav-btn[data-screen="services"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  doc.querySelector('.svc-row .svc-more').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  const del = [...doc.querySelectorAll('#menu-body button')].find((b) => b.textContent === 'Supprimer…');
+  del.dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  const confirmBtn = [...doc.querySelectorAll('#menu-body button')].find((b) => b.textContent === 'Supprimer et déconnecter');
+  confirmBtn.dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('service supprimé et déconnecté sans erreur', JSON.parse(window.localStorage.getItem('unichat.services')).length === 0);
+  check('historique du service purgé', JSON.parse(window.localStorage.getItem('unichat.history')).length === 0);
 
   console.log(failures === 0 ? 'ALL DOM TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);
