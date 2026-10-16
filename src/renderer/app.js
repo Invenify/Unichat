@@ -230,7 +230,7 @@ function openCatalog(onboarding) {
     ? 'Bienvenue — choisissez vos services IA'
     : 'Gérer les services';
   $('#catalog-sub').textContent = onboarding
-    ? 'Sélectionnez les chats IA que vous voulez réunir dans UniChat. Tout est modifiable ensuite (bouton ⚙).'
+    ? 'Sélectionnez les chats IA que vous voulez réunir dans UniChat. Tout est modifiable ensuite.'
     : "Cliquez pour activer ou désactiver un service. Désactiver conserve la session et l'historique ; supprimer (×) efface tout.";
   renderCatalog();
   $('#catalog-overlay').classList.remove('hidden');
@@ -389,7 +389,12 @@ async function importRegistry() {
 
 // --- Événements ---
 
-$('#add-service').addEventListener('click', openWizard);
+$('#add-service').addEventListener('click', () => openCatalog(false));
+$('#catalog-add-url').addEventListener('click', () => {
+  // Service absent du catalogue : on retombe sur le wizard classique.
+  closeCatalog();
+  openWizard();
+});
 $('#wizard-cancel').addEventListener('click', closeWizard);
 $('#wizard-analyze').addEventListener('click', analyze);
 $('#svc-url').addEventListener('keydown', (e) => {
