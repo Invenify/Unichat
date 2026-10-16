@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('unichat', {
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),
   renameHistoryEntry: (serviceId, url, title) => ipcRenderer.invoke('history-rename', serviceId, url, title),
+  setPinnedHistoryEntry: (serviceId, url, pinned) => ipcRenderer.invoke('history-set-pinned', serviceId, url, pinned),
   analyzeUrl: (url) => ipcRenderer.invoke('analyze-url', url),
   getCatalog: () => ipcRenderer.invoke('get-catalog'),
   setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),

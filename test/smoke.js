@@ -127,6 +127,20 @@ const check = (label, cond) => {
   convStore.remove(svc.id, svc.url + '/chat/abc');
   check('remove entrée absente sans erreur', convStore.listAll().length === 0);
 
+  // conv-store : épinglage des favoris (clic droit → Épingler)
+  convStore.upsert(svc.id, svc.url + '/chat/abc', 'Favori');
+  convStore.upsert(svc.id, svc.url + '/chat/def', 'Normal');
+  check('setPinned épingle une entrée', (convStore.setPinned(svc.id, svc.url + '/chat/abc#frag', true) || {}).pinned === true);
+  check('setPinned entrée inconnue → null', convStore.setPinned(svc.id, svc.url + '/chat/zzz', true) === null);
+  convStore.upsert(svc.id, svc.url + '/chat/abc', 'Favori (mis à jour)');
+  check("l'épingle survit à un upsert", convStore.listAll().find((e) => e.url.endsWith('/chat/abc')).pinned === true);
+  check('les épinglées trient en tête', (function () {
+    const sorted = convStore.listAll().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    return sorted[0].url.endsWith('/chat/abc');
+  })());
+  check('setPinned détache (false)', convStore.setPinned(svc.id, svc.url + '/chat/abc', false).pinned === false);
+  convStore.removeService(svc.id);
+
   // conv-store : stripTitle (nettoyage au boot des titres avec suffixe)
   convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/abc', 'Hello / Open WebUI');
   convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/def', 'meteo montreal / Open WebUI');

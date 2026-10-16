@@ -179,6 +179,11 @@ input { font: inherit; }
 
 .chat-entry .chat-date { font-size: 11px; color: var(--fg-dim); flex-shrink: 0; }
 
+/* Entrée épinglée : marque en couleur d'accent, visible au premier coup d'œil */
+.chat-entry.pinned { color: var(--fg); }
+.chat-entry .pin-icon { color: var(--accent); flex-shrink: 0; }
+.chat-entry .pin-icon svg { width: 12px; height: 12px; }
+
 /* Renommage inline d'une entrée (Enter valide, Échap annule) */
 .chat-entry .chat-rename {
   flex: 1;

@@ -106,6 +106,17 @@ function rename(serviceId, url, title) {
   return existing;
 }
 
+// Épingle / détache une entrée (clic droit « Épingler »). Les épinglées
+// remontent en tête de leur groupe de service dans la sidebar.
+function setPinned(serviceId, url, pinned) {
+  const target = key(serviceId, normalize(url));
+  const existing = entries.find((e) => key(e.serviceId, e.url) === target);
+  if (!existing) return null;
+  existing.pinned = pinned === true;
+  saveSoon();
+  return existing;
+}
+
 // Retire un suffixe de marque (stripTitleRegex du service) des titres déjà
 // enregistrés avant l'ajout de la regex. Les titres renommés manuellement
 // ne sont pas touchés. Renvoie le nombre de titres nettoyés.
@@ -146,4 +157,4 @@ function purgeMatching(serviceId, regexStr) {
   return n;
 }
 
-module.exports = { init, upsert, listAll, removeService, remove, rename, stripTitle, purgeMatching };
+module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching };

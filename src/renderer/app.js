@@ -25,6 +25,7 @@ const ICONS = {
   edit: '<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
   check: '<polyline points="20 6 9 17 4 12"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  pin: '<line x1="12" y1="17" x2="12" y2="22"/><path d="M8 3h8v4l2 4H6l2-4V3z"/>',
 };
 
 function svg(name) {
@@ -149,12 +150,14 @@ function render() {
     });
     group.appendChild(header);
 
-    const entries = history.filter(
-      (e) => e.serviceId === svc.id && matchesSearch(e.title)
-    );
+    // Entrées épinglées en tête du groupe (tri stable : l'ordre updatedAt
+    // descendant de listAll est conservé au sein de chaque sous-ensemble).
+    const entries = history
+      .filter((e) => e.serviceId === svc.id && matchesSearch(e.title))
+      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
     for (const entry of entries.slice(0, 30)) {
       const btn = document.createElement('button');
-      btn.className = 'chat-entry';
+      btn.className = 'chat-entry' + (entry.pinned ? ' pinned' : '');
       btn.title = entry.title;
       btn.dataset.historyUrl = entry.url;
 
@@ -166,6 +169,13 @@ function render() {
       title.className = 'chat-title';
       title.textContent = entry.title;
       btn.appendChild(title);
+
+      if (entry.pinned) {
+        const pinIcon = svg('pin');
+        pinIcon.classList.add('pin-icon');
+        pinIcon.title = 'Épinglé';
+        btn.appendChild(pinIcon);
+      }
 
       const date = document.createElement('span');
       date.className = 'chat-date';
@@ -470,6 +480,14 @@ function openEntryMenu(entry, x, y) {
   closeEntryMenu();
   entryMenu = document.createElement('div');
   entryMenu.className = 'entry-menu';
+
+  const pinBtn = document.createElement('button');
+  pinBtn.textContent = entry.pinned ? 'Désépingler' : 'Épingler';
+  pinBtn.addEventListener('click', () => {
+    closeEntryMenu();
+    api.setPinnedHistoryEntry(entry.serviceId, entry.url, !entry.pinned);
+  });
+  entryMenu.appendChild(pinBtn);
 
   const rename = document.createElement('button');
   rename.textContent = 'Renommer';

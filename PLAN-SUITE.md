@@ -93,7 +93,7 @@ le dernier commit).
 
 - Machine : Bazzite, Node v26 (FlyEnv), l'utilisateur = Hugo.
 - Vérifier : `node --check <fichier>` sur tout .js modifié ;
-  `node test/smoke.js` (52 PASS attendus, 54 si le réseau répond pour
+  `node test/smoke.js` (73 PASS attendus, 75 si le réseau répond pour
   les tests metadata) ;
   boot : `env -u ELECTRON_RUN_AS_NODE timeout 8 npx electron .`
   (exit 124 = pas de crash).
@@ -141,10 +141,30 @@ Priorité proposée :
    - Mode recettes (plus tard) : `recipes/<domaine>.json` avec
      `inputSelector` → collage + envoi automatiques, dégradation silencieuse
      si l'UI change. C'est la « phase 3 » de la feuille de route d'origine.
-4. **#4 — Comparaison** : même prompt relayé vers N services + vues en
-   colonnes (découpage des bounds des WebContentsView).
-5. **#6 — Systray** (fermeture en arrière-plan), **#7 — épingler des favoris**.
-6. **#5 — Recettes non-lus** (fragile, optionnel).
+4. **#4 — Comparaison — ANNULÉ (2026-10-16, décision de l'utilisateur)** :
+   vues en colonnes ne sera pas fait. **#5 — Recettes non-lus — ANNULÉ
+   également.**
+5. **#6 — Systray — FAIT (2026-10-16)** :
+   - `Tray` (main.js) créé au boot avec le logo licorne (22 px), tooltip
+     « UniChat », menu « Afficher UniChat » / « Quitter ». Clic sur l'icône
+     → restaurer la fenêtre (show/restore/focus).
+   - Fermer la fenêtre la CACHE (l'app tourne en arrière-plan, sessions et
+     historique vivants) : handler `close` + drapeau `isQuitting` levé par
+     `before-quit` (seul « Quitter » du tray quitte vraiment).
+   - Notification (une fois par session) au premier cachage : « UniChat
+     continue en arrière-plan ».
+   - Si le tray échoue (pas de zone de notifications), `tray` reste null →
+     la fermeture de la fenêtre quitte l'app comme avant (jamais
+     d'application impossible à fermer). `activate` (macOS) réaffiche.
+6. **#7 — Épingler des favoris — FAIT (2026-10-16)** :
+   - Clic droit sur une entrée d'historique → « Épingler » /
+     « Désépingler » (avant Renommer/Retirer).
+   - Champ `pinned` dans history.json (`conv-store.setPinned`, IPC
+     `history-set-pinned`, preload `setPinnedHistoryEntry`). Survit aux
+     upserts (comme `manual`), normalisation d'URL identique à rename.
+   - Dans la sidebar : les épinglées trient en tête de leur groupe de
+     service (tri stable, ordre updatedAt conservé au sein de chaque
+     sous-ensemble) et portent une épingle SVG couleur d'accent.
 7. **#9 — Packaging réel** : `npm run dist:win` / `dist:mac` jamais testés
    (icône OK : electron-builder convertit `build/icon.png`). Tester un
    vrai build.

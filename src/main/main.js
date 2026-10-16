@@ -1,7 +1,7 @@
 // main.js — fenêtre UniChat : sidebar (renderer) + un WebContentsView par
 // service, sessions persistantes, empilées, une seule visible.
 
-const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol, Tray, Menu, nativeImage, Notification } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,6 +17,16 @@ let mainWindow = null;
 const views = new Map(); // serviceId -> WebContentsView
 let activeServiceId = null;
 let modalOpen = false; // modal renderer ouverte → vues masquées (elles couvrent la fenêtre)
+
+// Systray : fermer la fenêtre la cache (l'app tourne en arrière-plan),
+// le tray la restaure. isQuitting distingue « vraie » fermeture et cachage.
+let tray = null;
+let isQuitting = false;
+let trayHintShown = false;
+
+// Instance unique : un second lancement restaure la fenêtre (cachée dans
+// le tray) au lieu de repartir de zéro.
+const gotInstanceLock = app.requestSingleInstanceLock();
 
 // Schéma interne qui sert les logos importés (userData/logos) au renderer.
 protocol.registerSchemesAsPrivileged([
@@ -160,6 +170,15 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
 
   mainWindow.on('resize', layoutViews);
+  mainWindow.on('close', (e) => {
+    // Tray disponible : la fermeture cache la fenêtre, l'app continue en
+    // arrière-plan (sessions et historique vivants). Le tray restaure.
+    if (!isQuitting && tray) {
+      e.preventDefault();
+      mainWindow.hide();
+      showTrayHint();
+    }
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -184,6 +203,11 @@ ipcMain.handle('history-remove', (_e, serviceId, url) => {
 });
 ipcMain.handle('history-rename', (_e, serviceId, url, title) => {
   const entry = convStore.rename(serviceId, url, title);
+  pushHistory();
+  return entry || null;
+});
+ipcMain.handle('history-set-pinned', (_e, serviceId, url, pinned) => {
+  const entry = convStore.setPinned(serviceId, url, pinned);
   pushHistory();
   return entry || null;
 });
@@ -340,7 +364,58 @@ ipcMain.handle('import-registry', async () => {
   return { ok: true, added };
 });
 
-app.whenReady().then(() => {
+// --- Systray : fermeture en arrière-plan ---
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.show();
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+}
+
+// Petite notification (une fois par session) pour expliquer le cachage.
+function showTrayHint() {
+  if (trayHintShown || !Notification.isSupported()) return;
+  trayHintShown = true;
+  try {
+    new Notification({
+      title: 'UniChat continue en arrière-plan',
+      body: "L'icône UniChat reste dans la zone de notifications : cliquez pour rouvrir, clic droit pour quitter.",
+    }).show();
+  } catch {
+    // environnement sans service de notifications : silencieux
+  }
+}
+
+// Créé après la fenêtre. Si l'environnement n'a pas de zone de notifications,
+// l'échec est silencieux et la fermeture de la fenêtre quitte l'app normalement.
+function createTray() {
+  try {
+    const icon = nativeImage.createFromPath(
+      path.join(__dirname, '..', 'renderer', 'assets', 'logo.png')
+    );
+    if (icon.isEmpty()) return;
+    tray = new Tray(icon.resize({ width: 22, height: 22 }));
+    tray.setToolTip('UniChat');
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: 'Afficher UniChat', click: showMainWindow },
+        { type: 'separator' },
+        { label: 'Quitter', click: () => app.quit() },
+      ])
+    );
+    tray.on('click', showMainWindow);
+  } catch {
+    tray = null;
+  }
+}
+
+if (!gotInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => showMainWindow());
+
+  app.whenReady().then(() => {
   const userData = app.getPath('userData');
   registry.init(userData);
   convStore.init(userData);
@@ -380,8 +455,21 @@ app.whenReady().then(() => {
   }
 
   createWindow();
+  createTray();
+  });
+}
+
+app.on('before-quit', () => {
+  isQuitting = true; // la fermeture de la fenêtre ne doit plus la cacher
+});
+
+app.on('activate', () => {
+  // macOS (dock) : retour de l'arrière-plan → réafficher.
+  if (mainWindow) showMainWindow();
 });
 
 app.on('window-all-closed', () => {
+  // N'arrive que si la fenêtre est réellement détruite (quitter via le tray
+  // ou environnement sans tray) — jamais lors du simple cachage.
   app.quit();
 });
