@@ -126,8 +126,9 @@ const layers = [
     color: () => DARK,
   },
   {
-    // Queue de la bulle de dialogue (avant la bulle, pour être dessous).
-    dist: (x, y) => sdTriangle(x, y, 338, 146, 322, 198, 384, 152),
+    // Queue de la bulle : part du bord bas-gauche de la bulle, pointe vers la
+    // tête en s'arrêtant sur la crinière — sans toucher l'oreille blanche.
+    dist: (x, y) => sdTriangle(x, y, 336, 146, 374, 152, 344, 194),
     color: () => DARK,
   },
   {
