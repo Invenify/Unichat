@@ -7,7 +7,7 @@ const path = require('path');
 
 const registry = require('./registry');
 const metadata = require('./metadata');
-const catalog = require('./catalog');
+const catalog = require('../shared/catalog');
 const logos = require('./logos');
 const settings = require('./settings');
 const convStore = require('../engine/conv-store');

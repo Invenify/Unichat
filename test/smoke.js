@@ -10,7 +10,7 @@ const registry = require(path.join(ROOT, 'src/main/registry'));
 const convStore = require(path.join(ROOT, 'src/engine/conv-store'));
 const titleTracker = require(path.join(ROOT, 'src/engine/title-tracker'));
 const metadata = require(path.join(ROOT, 'src/main/metadata'));
-const catalog = require(path.join(ROOT, 'src/main/catalog'));
+const catalog = require(path.join(ROOT, 'src/shared/catalog'));
 const logos = require(path.join(ROOT, 'src/main/logos'));
 
 let failures = 0;

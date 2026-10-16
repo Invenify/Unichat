@@ -7,7 +7,7 @@ Tous vos chats IA dans une seule interface. Desktop (Electron, Windows/Mac) et, 
 - **Registre de services dynamique** : on colle l'URL d'un chat IA, l'app récupère automatiquement le nom, le logo (favicon) et les couleurs (theme-color, manifest.json), modifiables avant enregistrement.
 - **Moteur de titres universel** : à chaque navigation dans un WebView, l'app enregistre `{serviceId, url, titre de la page, date}`. La sidebar est construite à partir de cet historique local — aucun sélecteur CSS à maintenir, le titre de la page EST le titre du chat.
 - **Finitions** : édition d'un service (nom, couleurs, logo), suppression avec session conservable ou déconnectée, barre d'adresse affichant l'URL courante, export/import du registre en JSON (fusion par URL), raccourcis Ctrl/Cmd+1…9 et Ctrl/Cmd+K.
-- **Catalogue de services connus** (`src/main/catalog.js`, purement déclaratif) : au premier lancement, une popup propose les chats IA connus (ChatGPT, Claude, Gemini, Euria, Lumo, Le Chat, DiDi…). Le bouton ⚙ rouvre cette popup pour activer/désactiver à tout moment — désactiver conserve la session et l'historique.
+- **Catalogue de services connus** (`src/shared/catalog.js`, purement déclaratif) : au premier lancement, une popup propose les chats IA connus (ChatGPT, Claude, Gemini, Euria, Lumo, Le Chat, DiDi…). Le bouton ⚙ rouvre cette popup pour activer/désactiver à tout moment — désactiver conserve la session et l'historique.
 - **Règle d'or** : aucun code spécifique à un service. Un service = une entrée JSON dans le registre.
 
 ## Démarrage
@@ -25,6 +25,10 @@ npm start
 
 ```
 src/
+├── shared/                # Code portable desktop + Android (zéro API Node/Electron)
+│   ├── title-rules.js     # isChatUrl, cleanTitle — le cœur du moteur de titres
+│   ├── catalog.js         # Catalogue déclaratif des chats IA connus
+│   └── service.js         # Modèle d'un service + fusion par URL (import/export)
 ├── main/
 │   ├── main.js            # Fenêtre, WebContentsView par service, IPC
 │   ├── registry.js        # Registre de services (services.json)

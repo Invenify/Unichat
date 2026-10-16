@@ -19,7 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const catalog = require(path.join(__dirname, '..', 'src/main/catalog'));
+const catalog = require(path.join(__dirname, '..', 'src/shared/catalog'));
 
 const OUT_DIR = path.join(__dirname, '..', 'src/renderer/assets/logos');
 
