@@ -8,6 +8,10 @@
   "scripts": {
     "start": "electron .",
     "icon": "node scripts/make-icon.js",
+    "mobile": "node scripts/build-mobile.js",
+    "mobile:sync": "npm run mobile && cap sync android",
+    "mobile:open": "cap open android",
+    "test": "node test/smoke.js",
     "dist:win": "electron-builder --win nsis --x64",
     "dist:mac": "electron-builder --mac dmg --arm64",
     "dist:mac:zip": "electron-builder --mac zip --arm64",
@@ -15,8 +19,10 @@
     "dist:all": "electron-builder --linux AppImage --x64 && electron-builder --win nsis --x64 && electron-builder --mac zip --arm64"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "electron": "^30.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.28.2"
   },
   "build": {
     "appId": "com.hugo.unichat",
@@ -41,5 +47,9 @@
   },
   "allowScripts": {
     "electron@30.5.1": true
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
   }
 }
