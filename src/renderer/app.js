@@ -234,10 +234,12 @@ function openCatalog(onboarding) {
     : "Cliquez pour activer ou désactiver un service. Désactiver conserve la session et l'historique ; supprimer (×) efface tout.";
   renderCatalog();
   $('#catalog-overlay').classList.remove('hidden');
+  api.setModalOpen(true);
 }
 
 function closeCatalog() {
   $('#catalog-overlay').classList.add('hidden');
+  api.setModalOpen(false);
 }
 
 // --- Wizard ---
@@ -253,6 +255,7 @@ function openWizard() {
   editServiceId = null;
   analysis = null;
   setEditFieldsVisible(false);
+  api.setModalOpen(true);
   $('#wizard-title').textContent = 'Ajouter un service';
   $('#wizard-save').textContent = 'Ajouter le service';
   $('#svc-url').value = '';
@@ -284,11 +287,13 @@ function openEdit(svc) {
   $('#wizard-step-url').classList.add('hidden');
   $('#wizard-step-confirm').classList.remove('hidden');
   $('#wizard-overlay').classList.remove('hidden');
+  api.setModalOpen(true);
   $('#svc-name').focus();
 }
 
 function closeWizard() {
   $('#wizard-overlay').classList.add('hidden');
+  api.setModalOpen(false);
 }
 
 async function analyze() {
@@ -355,10 +360,12 @@ function openRemove(svc) {
   pendingRemoveId = svc.id;
   $('#remove-title').textContent = `Supprimer « ${svc.name} » ?`;
   $('#remove-overlay').classList.remove('hidden');
+  api.setModalOpen(true);
 }
 
 function closeRemove() {
   $('#remove-overlay').classList.add('hidden');
+  api.setModalOpen(false);
   pendingRemoveId = null;
 }
 

@@ -15,6 +15,7 @@ const SIDEBAR_WIDTH = 310;
 let mainWindow = null;
 const views = new Map(); // serviceId -> WebContentsView
 let activeServiceId = null;
+let modalOpen = false; // modal renderer ouverte → vues masquées (elles couvrent la fenêtre)
 
 function layoutViews() {
   if (!mainWindow) return;
@@ -22,7 +23,7 @@ function layoutViews() {
   const bounds = { x: SIDEBAR_WIDTH, y: 0, width: Math.max(0, w - SIDEBAR_WIDTH), height: h };
   for (const [id, view] of views) {
     view.setBounds(bounds);
-    view.setVisible(id === activeServiceId);
+    view.setVisible(!modalOpen && id === activeServiceId);
   }
 }
 
@@ -231,6 +232,13 @@ ipcMain.handle('remove-service', (_e, id, keepSession) => {
 
 ipcMain.handle('show-service', (_e, serviceId) => {
   showService(serviceId);
+});
+
+// Les WebContentsView recouvrent la fenêtre : quand le renderer ouvre une
+// modal (wizard, catalogue, suppression), on les masque pour la laisser voir.
+ipcMain.handle('set-modal-open', (_e, open) => {
+  modalOpen = !!open;
+  layoutViews();
 });
 
 ipcMain.handle('navigate', (_e, serviceId, url) => {

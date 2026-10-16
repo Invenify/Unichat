@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('unichat', {
   updateService: (id, patch) => ipcRenderer.invoke('update-service', id, patch),
   removeService: (id, keepSession) => ipcRenderer.invoke('remove-service', id, keepSession),
   showService: (id) => ipcRenderer.invoke('show-service', id),
+  setModalOpen: (open) => ipcRenderer.invoke('set-modal-open', open),
   navigate: (serviceId, url) => ipcRenderer.invoke('navigate', serviceId, url),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   exportRegistry: () => ipcRenderer.invoke('export-registry'),
