@@ -9,10 +9,16 @@
 const catalog = [
   { name: 'ChatGPT', url: 'https://chatgpt.com', accent: '#10a37f', accent2: '#35c29a', logo: 'assets/logos/chatgpt.png', defaultOn: false },
   { name: 'Claude', url: 'https://claude.ai', accent: '#d97757', accent2: '#e8a87c', logo: 'assets/logos/claude.ico', defaultOn: false },
-  { name: 'Gemini', url: 'https://gemini.google.com', accent: '#4285f4', accent2: '#9b72cb', logo: 'assets/logos/gemini.png', defaultOn: false },
+  // excludeRegex : page « accueil/liste » du service — ce n'est pas une
+  // conversation, elle ne doit jamais polluer l'historique de la sidebar.
+  // Gemini : les conversations vivent à /app/<id> (ou /u/<n>/app/<id> si
+  // plusieurs comptes Google), /app est la liste des chats.
+  { name: 'Gemini', url: 'https://gemini.google.com', accent: '#4285f4', accent2: '#9b72cb', logo: 'assets/logos/gemini.png', excludeRegex: '/app$', defaultOn: false },
   { name: 'Copilot', url: 'https://copilot.microsoft.com', accent: '#0f6cbd', accent2: '#56c2cd', logo: 'assets/logos/copilot.ico', defaultOn: false },
   { name: 'Perplexity', url: 'https://www.perplexity.ai', accent: '#20808d', accent2: '#52b9c9', logo: 'assets/logos/perplexity.svg', defaultOn: false },
-  { name: 'Le Chat', url: 'https://chat.mistral.ai', accent: '#fa520f', accent2: '#ff8c42', logo: 'assets/logos/le-chat.png', defaultOn: true },
+  // Le Chat : la nouvelle conversation démarre à /chat, elle devient
+  // /chat/<id> dès le premier message. /chat seul = page d'accueil.
+  { name: 'Le Chat', url: 'https://chat.mistral.ai', accent: '#fa520f', accent2: '#ff8c42', logo: 'assets/logos/le-chat.png', excludeRegex: '/chat$', defaultOn: true },
   { name: 'Euria', url: 'https://euria.infomaniak.com', accent: '#0098f7', accent2: '#54c2f9', logo: 'assets/logos/euria.ico', blockNavRegex: '^https://ksuite\\.infomaniak\\.com', defaultOn: true },
   { name: 'Lumo', url: 'https://lumo.proton.me', accent: '#6d4aff', accent2: '#a489ff', logo: 'assets/logos/lumo.png', excludeRegex: '/guest', defaultOn: true },
   { name: 'Grok', url: 'https://grok.com', accent: '#1d1d1f', accent2: '#6e6e73', logo: 'assets/logos/grok.png', defaultOn: false },

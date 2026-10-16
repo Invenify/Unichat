@@ -153,6 +153,17 @@ const check = (label, cond) => {
   fakeWC.listeners['page-title-updated']({}, 'Deuxième chat');
   check('chat même hôte enregistré', captured && captured.title === 'Deuxième chat');
 
+  // title-tracker : les pages « accueil/liste » du catalogue ne sont pas des
+  // conversations (excludeRegex) — ex. Gemini /app, Le Chat /chat.
+  const gemini = catalog.list().find((c) => c.name === 'Gemini');
+  check('Gemini : /app (liste) ignoré', titleTracker.isChatUrl(gemini, 'https://gemini.google.com/app') === false);
+  check('Gemini : /app/<id> enregistré', titleTracker.isChatUrl(gemini, 'https://gemini.google.com/app/c1de979d1d05e9f0') === true);
+  check('Gemini : /u/1/app (multi-compte) ignoré', titleTracker.isChatUrl(gemini, 'https://gemini.google.com/u/1/app') === false);
+  check('Gemini : /u/1/app/<id> enregistré', titleTracker.isChatUrl(gemini, 'https://gemini.google.com/u/1/app/abc') === true);
+  const lechat = catalog.list().find((c) => c.name === 'Le Chat');
+  check('Le Chat : /chat (nouvelle conversation) ignoré', titleTracker.isChatUrl(lechat, 'https://chat.mistral.ai/chat') === false);
+  check('Le Chat : /chat/<id> enregistré', titleTracker.isChatUrl(lechat, 'https://chat.mistral.ai/chat/abc') === true);
+
   // metadata : analyse d'une vraie page (fetch réseau)
   try {
     const meta = await metadata.analyzeUrl('chat.nexio.ovh');

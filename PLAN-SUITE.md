@@ -58,6 +58,13 @@ le dernier commit).
   URL `…/?ksuite-mode=main` (le paramètre coupe la redirection à la source)
   ET `blockNavRegex: '^https://ksuite\.infomaniak\.com'` (will-navigate /
   will-redirect bloqués). Les deux sont dans le catalogue.
+- **Pages « accueil/liste » ≠ conversations (2026-10-16)** : les SPA
+  enregistrent leur page liste comme un chat (ex. Gemini `/app` « Google
+  Gemini », Le Chat `/chat`). Corrigé par `excludeRegex` catalogue :
+  Gemini `/app$`, Le Chat `/chat$` (couvre le multi-compte Google
+  `/u/<n>/app`). Le patch au boot de main.js propage l'exclusion aux
+  services déjà enregistrés (si leur `excludeRegex` est null). Si un autre
+  service pollue ainsi (Claude `/new` probable), même recette.
 - **Correspondance par origine** (pas URL exacte) entre registre et
   catalogue, sinon doublon « Euria perso » (à cause du paramètre d'URL).
 - **Favicons** : certains sites bloquent curl (403) mais pas le renderer ;
