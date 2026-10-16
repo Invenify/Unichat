@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src https: data:; style-src 'self'" />
+  <title>UniChat</title>
+  <link rel="stylesheet" href="theme.css" />
+</head>
+<body>
+  <aside id="sidebar">
+    <header id="brand">
+      <span class="logo">UniChat</span>
+    </header>
+
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="Rechercher un chat…" autocomplete="off" />
+    </div>
+
+    <button id="add-service" class="add-btn">＋ Ajouter un service…</button>
+
+    <nav id="service-list" aria-label="Services et conversations"></nav>
+
+    <footer id="sidebar-footer">
+      <span id="active-url"></span>
+      <button id="open-external" title="Ouvrir dans le navigateur">↗</button>
+    </footer>
+  </aside>
+
+  <!-- Wizard « Ajouter un service » -->
+  <div id="wizard-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="wizard">
+      <h2>Ajouter un service</h2>
+
+      <div id="wizard-step-url" class="wizard-step">
+        <label for="svc-url">URL du chat IA</label>
+        <input id="svc-url" type="url" placeholder="https://chat.example.com" />
+        <div class="wizard-actions">
+          <button id="wizard-analyze" class="primary">Analyser</button>
+          <button id="wizard-cancel" class="ghost">Annuler</button>
+        </div>
+      </div>
+
+      <div id="wizard-step-confirm" class="wizard-step hidden">
+        <div class="preview">
+          <img id="svc-logo" alt="" />
+          <span id="svc-name-preview"></span>
+        </div>
+        <label for="svc-name">Nom</label>
+        <input id="svc-name" type="text" />
+        <label for="svc-accent">Couleur d'accentuation</label>
+        <input id="svc-accent" type="color" />
+        <label for="svc-accent2">Couleur secondaire</label>
+        <input id="svc-accent2" type="color" />
+        <div class="wizard-actions">
+          <button id="wizard-save" class="primary">Ajouter le service</button>
+          <button id="wizard-back" class="ghost">Retour</button>
+        </div>
+      </div>
+
+      <p id="wizard-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

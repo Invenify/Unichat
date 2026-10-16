@@ -1,0 +1,32 @@
+{
+  "name": "unichat",
+  "version": "0.1.0",
+  "description": "Tous vos chats IA dans une seule interface — desktop (Electron) et Android (Capacitor).",
+  "main": "src/main/main.js",
+  "author": "Hugo",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.hugo.unichat",
+    "productName": "UniChat",
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    }
+  }
+}
