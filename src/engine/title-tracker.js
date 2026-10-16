@@ -6,15 +6,13 @@
 
 const convStore = require('./conv-store');
 
+// Racine du service : même origine et même chemin, paramètres ignorés
+// (l'URL de démarrage peut porter un paramètre, ex. Euria ?ksuite-mode=main).
 function isRoot(serviceUrl, url) {
   try {
     const a = new URL(serviceUrl);
     const b = new URL(url);
-    return (
-      a.hostname === b.hostname &&
-      (b.pathname === '/' || b.pathname === a.pathname) &&
-      b.search === ''
-    );
+    return a.origin === b.origin && a.pathname === b.pathname;
   } catch {
     return false;
   }
@@ -38,6 +36,14 @@ function isAuthUrl(url) {
 
 function isChatUrl(service, url) {
   if (!/^https?:/i.test(url)) return false;
+  try {
+    // Un chat vit sur le même hôte que son service : les redirections SSO
+    // (login.infomaniak.com, v2.auth.mistral.ai, account.proton.me…) ne
+    // polluent jamais l'historique.
+    if (new URL(url).hostname !== new URL(service.url).hostname) return false;
+  } catch {
+    return false;
+  }
   if (isAuthUrl(url)) return false;
   if (excluded(service, url)) return false;
   return !isRoot(service.url, url);
@@ -64,4 +70,4 @@ function attach(webContents, service, onChange) {
   record(webContents.getURL(), webContents.getTitle());
 }
 
-module.exports = { attach };
+module.exports = { attach, isChatUrl };

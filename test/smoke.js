@@ -107,6 +107,15 @@ const check = (label, cond) => {
   fakeWC._url = svc.url + '/account/login';
   fakeWC.listeners['page-title-updated']({}, 'Connexion');
   check('login en sous-chemin ignoré', captured === null);
+  fakeWC._url = 'https://auth.autre-hote.com/login';
+  fakeWC.listeners['page-title-updated']({}, 'Connexion SSO');
+  check('SSO sur un autre hôte ignoré', captured === null);
+  fakeWC._url = svc.url + '?ksuite-mode=main';
+  fakeWC.listeners['page-title-updated']({}, 'Accueil du service');
+  check('racine avec paramètre ignorée', captured === null);
+  fakeWC._url = 'https://' + new URL(svc.url).hostname + '/chat/456';
+  fakeWC.listeners['page-title-updated']({}, 'Deuxième chat');
+  check('chat même hôte enregistré', captured && captured.title === 'Deuxième chat');
 
   // metadata : analyse d'une vraie page (fetch réseau)
   try {

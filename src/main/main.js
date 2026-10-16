@@ -302,11 +302,14 @@ app.whenReady().then(() => {
   convStore.init(userData);
 
   // Services enregistrés avant l'existence du catalogue : on leur donne
-  // le logo de leur entrée catalogue (correspondance par origine).
+  // le logo et les exclusions de leur entrée catalogue (par origine).
   for (const svc of registry.list()) {
-    if (svc.logo) continue;
     const entry = catalog.list().find((c) => catalog.sameOrigin(c.url, svc.url));
-    if (entry) registry.update(svc.id, { logo: entry.logo });
+    if (!entry) continue;
+    const patch = {};
+    if (!svc.logo && entry.logo) patch.logo = entry.logo;
+    if (!svc.excludeRegex && entry.excludeRegex) patch.excludeRegex = entry.excludeRegex;
+    if (Object.keys(patch).length > 0) registry.update(svc.id, patch);
   }
 
   createWindow();

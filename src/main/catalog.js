@@ -13,7 +13,7 @@ const catalog = [
   { name: 'Perplexity', url: 'https://www.perplexity.ai', accent: '#20808d', accent2: '#52b9c9', logo: 'https://www.perplexity.ai/favicon.svg', defaultOn: false },
   { name: 'Le Chat', url: 'https://chat.mistral.ai', accent: '#fa520f', accent2: '#ff8c42', logo: S2('chat.mistral.ai'), defaultOn: true },
   { name: 'Euria', url: 'https://euria.infomaniak.com', accent: '#0098f7', accent2: '#54c2f9', logo: 'https://euria.infomaniak.com/favicon.ico', blockNavRegex: '^https://ksuite\\.infomaniak\\.com', defaultOn: true },
-  { name: 'Lumo', url: 'https://lumo.proton.me', accent: '#6d4aff', accent2: '#a489ff', logo: 'https://lumo.proton.me/favicon.ico', defaultOn: true },
+  { name: 'Lumo', url: 'https://lumo.proton.me', accent: '#6d4aff', accent2: '#a489ff', logo: 'https://lumo.proton.me/favicon.ico', excludeRegex: '/guest', defaultOn: true },
   { name: 'Grok', url: 'https://grok.com', accent: '#1d1d1f', accent2: '#6e6e73', logo: S2('grok.com'), defaultOn: false },
   { name: 'DeepSeek', url: 'https://chat.deepseek.com', accent: '#4d6bfe', accent2: '#7d93ff', logo: 'https://chat.deepseek.com/favicon.ico', defaultOn: false },
   { name: 'HuggingChat', url: 'https://huggingface.co/chat', accent: '#ffd21e', accent2: '#ffe066', logo: 'https://huggingface.co/favicon.ico', defaultOn: false },
