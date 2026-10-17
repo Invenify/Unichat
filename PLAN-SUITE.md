@@ -19,10 +19,10 @@ le dernier commit).
 - **Phase 4** : édition d'un service (✎ : nom, couleurs, URL, exclusions,
   regex de blocage), export/import du registre (dialogues natifs, fusion
   par URL), barre d'adresse dynamique (URL courante de la vue active).
-- **Catalogue** (`src/shared/catalog.js`, déclaratif, 20 services : ChatGPT,
+- **Catalogue** (`src/shared/catalog.js`, déclaratif, 19 services : ChatGPT,
   Claude, Gemini, Copilot, Perplexity, Le Chat, Euria, Lumo, Grok,
   DeepSeek, HuggingChat, Poe, Qwen, Kimi, Meta AI, Character.AI, You.com,
-  Z.ai, Pi, **DiDi** = chat.nexio.ovh, vert #3aa14d).
+  Z.ai, Pi).
   - Onboarding au 1er lancement (registre vide → popup de choix).
   - Bouton ＋ et bouton ⚙ → même popup : activer/désactiver (champ `enabled`,
     la session et l'historique sont conservés à la désactivation).
@@ -44,7 +44,7 @@ le dernier commit).
 3. pas une page de connexion (`/login|signin|signup|register|auth|connexion`) ;
 4. pas exclue par `excludeRegex` du service (Lumo : `/guest`) ;
 5. pas la racine du service (origine + chemin, paramètres ignorés) ;
-6. le titre est nettoyé par `stripTitleRegex` du service (DiDi/Open WebUI :
+6. le titre est nettoyé par `stripTitleRegex` du service (ex. Open WebUI :
    `'\s*/\s*Open WebUI$'` → on garde le nom du chat seul).
 
 `isChatUrl` et `cleanTitle` sont exportés (tests, purge d'historique).

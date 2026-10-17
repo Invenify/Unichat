@@ -42,7 +42,7 @@ inconnu demain ? Collez son URL, il fonctionne immédiatement.
 |---|---|
 | **Registre dynamique** | Collez l'URL d'un chat IA : l'app récupère automatiquement son nom, son logo (favicon) et ses couleurs (theme-color, manifest). Tout est modifiable avant enregistrement. |
 | **Moteur de titres universel** | À chaque navigation, l'app enregistre `{service, url, titre de la page, date}`. La sidebar est construite à partir de cet historique — aucun sélecteur CSS à maintenir, le titre de la page EST le titre du chat. |
-| **Catalogue intégré** | 20 services connus (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi, DiDi…) proposés au premier lancement, activables/désactivables à tout moment (session et historique conservés). |
+| **Catalogue intégré** | 19 services connus (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) proposés au premier lancement, activables/désactivables à tout moment (session et historique conservés). |
 | **Finitions** | Édition d'un service (nom, couleurs, logo, URL, exclusions), suppression avec session conservable ou déconnectée, barre d'adresse, export/import du registre en JSON (fusion par URL). |
 | **Raccourcis** | `Ctrl/Cmd+1…9` pour basculer de service, `Ctrl/Cmd+K` pour chercher une conversation. |
 | **Thème** | Clair/sombre, suit l'OS en temps réel (les WebViews suivent). |
@@ -148,7 +148,7 @@ shows up tomorrow? Paste its URL, it just works.
 |---|---|
 | **Dynamic registry** | Paste an AI chat URL: the app automatically fetches its name, logo (favicon) and colors (theme-color, manifest) — all editable before saving. |
 | **Universal title engine** | On every navigation the app records `{service, url, page title, date}`. The sidebar is built from this history — no CSS selector to maintain, the page title IS the chat title. |
-| **Built-in catalog** | 20 known services (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi, DiDi…) offered on first launch, toggleable anytime (session and history preserved). |
+| **Built-in catalog** | 19 known services (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) offered on first launch, toggleable anytime (session and history preserved). |
 | **Finishing touches** | Service editing (name, colors, logo, URL, exclusions), removal with session kept or wiped, address bar, JSON registry export/import (merged by URL). |
 | **Shortcuts** | `Ctrl/Cmd+1…9` to switch services, `Ctrl/Cmd+K` to search a conversation. |
 | **Theme** | Light/dark, follows the OS live (WebViews follow too). |

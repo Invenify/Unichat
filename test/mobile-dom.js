@@ -33,16 +33,16 @@ const { window } = dom;
   // Démarrage : écran Chats actif, onboarding (catalogue) ouvert
   check('écran Chats actif', $('#screen-chats').classList.contains('active'));
   check('onboarding : catalogue ouvert', visible('#sheet-catalog'));
-  check('catalogue : 20 entrées', doc.querySelectorAll('.cat-entry').length === 20);
+  check('catalogue : 19 entrées', doc.querySelectorAll('.cat-entry').length === 19);
 
-  // Activer DiDi puis fermer : il apparaît dans Services
-  const didi = [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('DiDi'));
-  didi.dispatchEvent(new window.Event('click', { bubbles: true }));
+  // Activer Le Chat puis fermer : il apparaît dans Services
+  const lechat = [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('Le Chat'));
+  lechat.dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 20));
   $('#catalog-done').dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 20));
   check('catalogue fermé', !visible('#sheet-catalog'));
-  check('DiDi enregistré', JSON.parse(window.localStorage.getItem('unichat.services')).length === 1);
+  check('Le Chat enregistré', JSON.parse(window.localStorage.getItem('unichat.services')).length === 1);
 
   // Écran Services : une ligne, switch activé
   $('.nav-btn[data-screen="services"]').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -70,16 +70,16 @@ const { window } = dom;
   await new Promise((r) => setTimeout(r, 20));
   check('retour au thème système', doc.documentElement.dataset.theme === undefined);
 
-  // Wizard : URL du catalogue reconnue (DiDi), étape confirmation
+  // Wizard : URL du catalogue reconnue (Le Chat), étape confirmation
   $('#add-service').dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 20));
   check('wizard ouvert', visible('#sheet-wizard'));
-  $('#svc-url').value = 'chat.nexio.ovh';
+  $('#svc-url').value = 'chat.mistral.ai';
   $('#wizard-next').dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 20));
   check('analyse → étape confirmation', visible('#wizard-step-confirm') && !visible('#wizard-step-url'));
-  check('nom complété depuis le catalogue', $('#svc-name').value === 'DiDi');
-  check('couleur accent du catalogue', $('#svc-accent').value === '#3aa14d');
+  check('nom complété depuis le catalogue', $('#svc-name').value === 'Le Chat');
+  check('couleur accent du catalogue', $('#svc-accent').value === '#fa520f');
   $('#wizard-cancel').dispatchEvent(new window.Event('click', { bubbles: true }));
   check('wizard annulé', !visible('#sheet-wizard'));
 
@@ -88,7 +88,7 @@ const { window } = dom;
   doc.querySelector('.svc-row').dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 60)); // requestAnimationFrame du câblage natif
   check('vue service affichée', visible('#webview-holder'));
-  check('titre de la vue = nom du service', $('#webview-title').textContent === 'DiDi');
+  check('titre de la vue = nom du service', $('#webview-title').textContent === 'Le Chat');
   check('placeholder sans plugin natif', $('#webview-slot').textContent.includes('app Android'));
   $('#webview-back').dispatchEvent(new window.Event('click', { bubbles: true }));
   check('retour ferme la vue service', !visible('#webview-holder'));
@@ -97,7 +97,7 @@ const { window } = dom;
   $('#open-catalog').dispatchEvent(new window.Event('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 20));
   check('catalogue rouvert via ⚙', visible('#sheet-catalog'));
-  check('DiDi marqué activé', [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('DiDi')).classList.contains('enabled'));
+  check('Le Chat marqué activé', [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('Le Chat')).classList.contains('enabled'));
   $('#sheet-overlay').dispatchEvent(new window.Event('click', { bubbles: true }));
 
   // Suppression avec déconnexion : la façade native est absente (jsdom) —

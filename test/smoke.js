@@ -29,10 +29,9 @@ const check = (label, cond) => {
   // Catalogue des services connus
   const catalogList = catalog.list();
   check('catalogue fourni', catalogList.length >= 15);
-  check('DiDi présent (service personnalisé)', catalogList.some((c) => c.name === 'DiDi' && c.url === 'https://chat.nexio.ovh'));
-  const didi = catalogList.find((c) => c.name === 'DiDi');
-  check('DiDi vert (dinosaure)', didi.accent === '#3aa14d');
-  check('logos locaux présents (DiDi)', didi.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', didi.logo)));
+  const lechatEntry = catalogList.find((c) => c.name === 'Le Chat');
+  check('Le Chat au catalogue', !!lechatEntry && lechatEntry.url === 'https://chat.mistral.ai');
+  check('logos locaux présents (Le Chat)', lechatEntry.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', lechatEntry.logo)));
   check('tous les logos locaux existent', catalogList.every((c) => c.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', c.logo))));
   const euria = catalogList.find((c) => c.url.includes('euria.infomaniak.com'));
   check('Euria bloque KSuite', !!euria && euria.blockNavRegex.includes('ksuite'));
@@ -68,10 +67,11 @@ const check = (label, cond) => {
   check('logo importé référencé par le schéma interne', registry.get(added.id).logo === 'unichat-logo://f/abc123.png');
   check('customLogo désactivable (retour au catalogue)', (registry.update(added.id, { customLogo: false }), registry.get(added.id).customLogo === false));
 
-  // stripTitleRegex : suffixe de marque retiré des titres (DiDi / Open WebUI)
-  check('DiDi retire « / Open WebUI » du titre', titleTracker.cleanTitle(didi, 'meteo montreal / Open WebUI') === 'meteo montreal');
-  check('titre sans suffixe intact', titleTracker.cleanTitle(didi, 'Hello') === 'Hello');
-  check('titre réduit au suffixe → conservé', titleTracker.cleanTitle(didi, ' / Open WebUI') === ' / Open WebUI');
+  // stripTitleRegex : suffixe de marque retiré des titres (ex. « <chat> / Open WebUI »)
+  const owui = { stripTitleRegex: '\\s*/\\s*Open WebUI$' };
+  check('stripTitleRegex retire « / Open WebUI »', titleTracker.cleanTitle(owui, 'meteo montreal / Open WebUI') === 'meteo montreal');
+  check('titre sans suffixe intact', titleTracker.cleanTitle(owui, 'Hello') === 'Hello');
+  check('titre réduit au suffixe → conservé', titleTracker.cleanTitle(owui, ' / Open WebUI') === ' / Open WebUI');
   check('service sans regex → titre intact', titleTracker.cleanTitle({ stripTitleRegex: null }, 'Hello / Open WebUI') === 'Hello / Open WebUI');
   registry.update(added.id, { stripTitleRegex: '\\s*-\\s*X$' });
   check('stripTitleRegex persisté', registry.get(added.id).stripTitleRegex === '\\s*-\\s*X$');
@@ -142,9 +142,9 @@ const check = (label, cond) => {
   convStore.removeService(svc.id);
 
   // conv-store : stripTitle (nettoyage au boot des titres avec suffixe)
-  convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/abc', 'Hello / Open WebUI');
-  convStore.upsert('svc-test', 'https://chat.nexio.ovh/c/def', 'meteo montreal / Open WebUI');
-  convStore.rename('svc-test', 'https://chat.nexio.ovh/c/def', 'Mon titre');
+  convStore.upsert('svc-test', 'https://chat.example.com/c/abc', 'Hello / Open WebUI');
+  convStore.upsert('svc-test', 'https://chat.example.com/c/def', 'meteo montreal / Open WebUI');
+  convStore.rename('svc-test', 'https://chat.example.com/c/def', 'Mon titre');
   check('stripTitle nettoie les titres auto', convStore.stripTitle('svc-test', '\\s*/\\s*Open WebUI$') === 1);
   const stripAll = convStore.listAll();
   check('suffixe retiré du titre', stripAll.find((e) => e.url.endsWith('/c/abc')).title === 'Hello');
@@ -207,8 +207,8 @@ const check = (label, cond) => {
 
   // metadata : analyse d'une vraie page (fetch réseau)
   try {
-    const meta = await metadata.analyzeUrl('chat.nexio.ovh');
-    console.log('metadata chat.nexio.ovh →', JSON.stringify(meta));
+    const meta = await metadata.analyzeUrl('chat.mistral.ai');
+    console.log('metadata chat.mistral.ai →', JSON.stringify(meta));
     check('analyzeUrl normalise https', meta.url.startsWith('https://'));
     check('analyzeUrl renvoie un nom', typeof meta.name === 'string' && meta.name.length > 0);
   } catch (e) {

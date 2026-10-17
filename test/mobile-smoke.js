@@ -25,12 +25,12 @@ const check = (label, cond) => {
 
   // Registre vide au départ, then onboarding via le catalogue
   check('registre vide au départ', (await api.getServices()).length === 0);
-  const didi = catalog.find('https://chat.nexio.ovh');
-  check('DiDi trouvé au catalogue', !!didi && didi.name === 'DiDi');
+  const lechat = catalog.find('https://chat.mistral.ai');
+  check('Le Chat trouvé au catalogue', !!lechat && lechat.name === 'Le Chat');
 
-  const svc = await api.addService({ ...didi, enabled: true });
+  const svc = await api.addService({ ...lechat, stripTitleRegex: '\\s*/\\s*Open WebUI$', enabled: true });
   check('ajout retourne un id svc-', svc.id.startsWith('svc-'));
-  check('stripTitleRegex conservé', (await api.getServices())[0].stripTitleRegex === didi.stripTitleRegex);
+  check('stripTitleRegex conservé', (await api.getServices())[0].stripTitleRegex === '\\s*/\\s*Open WebUI$');
 
   // Moteur de titres : mêmes règles que le desktop
   const r1 = await api.recordNavigation(svc, svc.url, 'Open WebUI');
@@ -71,9 +71,9 @@ const check = (label, cond) => {
   await api.reorderServices([svc.id, deep.id]); // retour à l'état initial
 
   // analyzeUrl : complétion via le catalogue (avant le fetch natif, phase 6)
-  const meta = await api.analyzeUrl('chat.nexio.ovh');
-  check('analyzeUrl normalise https', meta.url === 'https://chat.nexio.ovh');
-  check('analyzeUrl complète via catalogue', meta.name === 'DiDi' && meta.accent === '#3aa14d' && meta.logo.includes('didi.png'));
+  const meta = await api.analyzeUrl('chat.mistral.ai');
+  check('analyzeUrl normalise https', meta.url === 'https://chat.mistral.ai');
+  check('analyzeUrl complète via catalogue', meta.name === 'Le Chat' && meta.accent === '#fa520f' && meta.logo.includes('le-chat.png'));
   const meta2 = await api.analyzeUrl('https://mon-chat.example.com');
   check('analyzeUrl fallback hostname', meta2.name === 'mon-chat.example.com' && meta2.accent === '#6c5ce7');
 

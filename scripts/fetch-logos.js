@@ -7,7 +7,7 @@
 //   node scripts/fetch-logos.js --force  # re-télécharge tout
 //
 // Les fichiers déjà sur disque sont conservés tels quels : un logo remplacé
-// manuellement (ex. le dinosaure Flaticon de DiDi) survit aux ré-exécutions.
+// manuellement survit aux ré-exécutions.
 //
 // Sources essayées dans l'ordre (toutes gratuites, sans clé) :
 //   1. favicon direct du site (favicon.ico, /static/favicon.png…) ;
@@ -25,7 +25,6 @@ const OUT_DIR = path.join(__dirname, '..', 'src/renderer/assets/logos');
 
 // Favicons directs connus (meilleure qualité que le proxy Google).
 const DIRECT = {
-  'chat.nexio.ovh': '/static/favicon.png',
   'www.perplexity.ai': '/favicon.svg',
 };
 
