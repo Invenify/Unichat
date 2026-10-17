@@ -14,6 +14,7 @@ import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.webkit.WebSettingsCompat
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -196,7 +197,7 @@ class UniChatWebViews : Plugin() {
                 }
                 cm.flush()
                 for (origin in listOf("https://$host", "https://www.$host")) {
-                    runCatching { WebStorage.getInstance().deleteOrigin(Uri.parse(origin)) }
+                    runCatching { WebStorage.getInstance().deleteOrigin(origin) }
                 }
             }
             call.resolve()
@@ -279,8 +280,19 @@ class UniChatWebViews : Plugin() {
                 emit(view, view.url, title)
             }
         }
-        parent.addView(wv, FrameLayout.LayoutParams(0, 0))
+        parent.addView(wv, makeLayoutParams(parent, 0, 0))
         return wv
+    }
+
+    // Le conteneur du pont Capacitor 8 est un CoordinatorLayout (pas un
+    // FrameLayout) : ses enfants EXIGENT ses LayoutParams, sinon crash à la
+    // passe de layout suivante. On génère le bon type selon le parent réel.
+    private fun makeLayoutParams(parent: ViewGroup, w: Int, h: Int): ViewGroup.LayoutParams {
+        return when (parent) {
+            is CoordinatorLayout -> CoordinatorLayout.LayoutParams(w, h)
+            is FrameLayout -> FrameLayout.LayoutParams(w, h)
+            else -> ViewGroup.MarginLayoutParams(w, h)
+        }
     }
 
     private fun applyGeometry() {
@@ -288,12 +300,16 @@ class UniChatWebViews : Plugin() {
         val wv = views[id] ?: return
         val rect = cssRect ?: return
         val cap = bridge?.webView ?: return
-        val lp = FrameLayout.LayoutParams(
+        val parent = wv.parent as? ViewGroup ?: return
+        val lp = makeLayoutParams(
+            parent,
             (rect.w * density).toInt().coerceAtLeast(0),
             (rect.h * density).toInt().coerceAtLeast(0)
         )
-        lp.leftMargin = cap.left + (rect.x * density).toInt()
-        lp.topMargin = cap.top + (rect.y * density).toInt()
+        if (lp is ViewGroup.MarginLayoutParams) {
+            lp.leftMargin = cap.left + (rect.x * density).toInt()
+            lp.topMargin = cap.top + (rect.y * density).toInt()
+        }
         wv.layoutParams = lp
         wv.requestLayout()
     }
