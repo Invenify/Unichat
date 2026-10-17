@@ -10,6 +10,7 @@ const SVG = {
   more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
 };
 
 let services = [];
@@ -90,17 +91,26 @@ document.querySelectorAll('.nav-btn').forEach((btn) =>
   btn.addEventListener('click', () => showScreen(btn.dataset.screen))
 );
 
-// --- Écran Chats : historique groupé par service, épinglées en tête ---
+// --- Écran Chats : historique groupé par service. Épinglées toujours
+// visibles (hors quota) puis, sans recherche, les 5 dernières normales
+// par service + « voir les autres » (modale). En recherche : toutes les
+// conversations correspondantes, tous services.
+
+const CHATS_PER_SERVICE = 5;
+
+function serviceEntries(svc, q) {
+  return history
+    .filter((e) => e.serviceId === svc.id)
+    .filter((e) => !q || e.title.toLowerCase().includes(q) || svc.name.toLowerCase().includes(q))
+    .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp);
+}
 
 function chatGroups(query) {
   const q = (query || '').trim().toLowerCase();
   const byService = new Map();
   for (const svc of services) {
     if (!svc.enabled) continue;
-    const entries = history
-      .filter((e) => e.serviceId === svc.id)
-      .filter((e) => !q || e.title.toLowerCase().includes(q) || svc.name.toLowerCase().includes(q))
-      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp);
+    const entries = serviceEntries(svc, q);
     if (entries.length > 0) byService.set(svc.id, entries);
   }
   return byService;
@@ -112,9 +122,38 @@ function fmtDate(ts) {
   return today ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
+// Ligne de conversation (écran Chats et modale « toutes les conversations »)
+function chatRow(svc, e, onMenu, onOpen) {
+  const row = document.createElement('div');
+  row.className = 'chat-entry';
+  row.dataset.svc = svc.id;
+  row.dataset.url = e.url;
+  row.innerHTML = `
+    <span class="dot" style="background: ${svc.accent}"></span>
+    <span class="chat-title">${escapeHtml(e.title)}</span>
+    <span class="chat-date">${fmtDate(e.timestamp)}</span>
+    <button class="chat-menu">${SVG.more}</button>`;
+  if (e.pinned) {
+    const pin = document.createElement('span');
+    pin.className = 'pin-icon';
+    pin.style.color = svc.accent;
+    pin.innerHTML = SVG.pin;
+    row.querySelector('.dot').replaceWith(pin);
+  }
+  row.addEventListener('click', (ev) => {
+    if (ev.target.closest('.chat-menu')) return;
+    if (onOpen) onOpen();
+    openWebView(svc, e.url);
+  });
+  row.querySelector('.chat-menu').addEventListener('click', () => onMenu(svc, e));
+  return row;
+}
+
 function renderChats() {
   const list = $('#chat-list');
-  const groups = chatGroups($('#search').value);
+  const query = $('#search').value;
+  const groups = chatGroups(query);
+  const searching = query.trim().length > 0;
   list.innerHTML = '';
   if (groups.size === 0) {
     list.innerHTML = `<p class="empty-hint">${history.length === 0
@@ -132,49 +171,64 @@ function renderChats() {
         ${logoHtml(svc, 'svc-fallback')}
         <span class="svc-name">${escapeHtml(svc.name)}</span>
       </button>`;
-    for (const e of entries) {
-      const row = document.createElement('div');
-      row.className = 'chat-entry';
-      row.dataset.svc = svc.id;
-      row.dataset.url = e.url;
-      row.innerHTML = `
-        <span class="dot" style="background: ${svc.accent}"></span>
-        <span class="chat-title">${escapeHtml(e.title)}</span>
-        <span class="chat-date">${fmtDate(e.timestamp)}</span>
-        <button class="chat-menu">${SVG.more}</button>`;
-      if (e.pinned) {
-        const pin = document.createElement('span');
-        pin.className = 'pin-icon';
-        pin.style.color = svc.accent;
-        pin.innerHTML = SVG.pin;
-        row.querySelector('.dot').replaceWith(pin);
-      }
-      row.addEventListener('click', (ev) => {
-        if (ev.target.closest('.chat-menu')) return;
-        openWebView(svc, e.url);
-      });
-      row.querySelector('.chat-menu').addEventListener('click', () => chatMenu(svc, e));
-      group.appendChild(row);
+    // Recherche → tout l'historique filtré ; sinon épinglées (hors quota)
+    // + 5 dernières conversations normales + « voir plus ».
+    const pinned = entries.filter((e) => e.pinned);
+    const rest = entries.filter((e) => !e.pinned);
+    const shown = searching ? entries : [...pinned, ...rest.slice(0, CHATS_PER_SERVICE)];
+    for (const e of shown) group.appendChild(chatRow(svc, e, chatMenu));
+    if (!searching && rest.length > CHATS_PER_SERVICE) {
+      const more = document.createElement('button');
+      more.className = 'chat-more';
+      more.innerHTML = `<span>Voir les ${rest.length - CHATS_PER_SERVICE} autres</span>${SVG.chevron}`;
+      more.addEventListener('click', () => openServiceChats(svc));
+      group.appendChild(more);
     }
     list.appendChild(group);
     group.querySelector('.svc-header').addEventListener('click', () => openWebView(svc, svc.url));
   }
 }
 
-// Menu d'une conversation
-function chatMenu(svc, entry) {
-  openMenu(entry.title, [
+// Modale « toutes les conversations d'un service »
+function openServiceChats(svc) {
+  const entries = serviceEntries(svc, '');
+  $('#sheet-chats-title').textContent = svc.name;
+  $('#sheet-chats-count').textContent =
+    entries.length + (entries.length > 1 ? ' conversations' : ' conversation');
+  const body = $('#sheet-chats-body');
+  body.innerHTML = '';
+  for (const e of entries) {
+    const row = chatRow(
+      svc,
+      e,
+      (s, entry) => chatMenu(s, entry, { fromSheet: true, refresh: () => openServiceChats(svc) }),
+      closeSheets // fermer la modale avant d'ouvrir la vue
+    );
+    body.appendChild(row);
+  }
+  openSheet('#sheet-chats');
+}
+
+// Menu d'une conversation. Depuis la modale (fromSheet), le renommage inline
+// n'est pas proposé (le champ vit dans la liste) mais épingler/retirer
+// rafraîchissent la modale via opts.refresh.
+function chatMenu(svc, entry, opts = {}) {
+  const done = async (fn) => {
+    await fn();
+    await reload();
+    if (opts.refresh) opts.refresh();
+  };
+  const items = [
     { label: 'Ouvrir', action: () => openWebView(svc, entry.url) },
-    { label: entry.pinned ? 'Détacher' : 'Épingler', action: async () => {
-      await api.setPinned(svc.id, entry.url, !entry.pinned);
-      await reload();
-    } },
-    { label: 'Renommer', action: () => startRename(svc, entry) },
-    { label: 'Retirer de l\u2019historique', danger: true, action: async () => {
-      await api.removeEntry(svc.id, entry.url);
-      await reload();
-    } },
-  ]);
+    { label: entry.pinned ? 'Détacher' : 'Épingler', action: () =>
+      done(() => api.setPinned(svc.id, entry.url, !entry.pinned)) },
+  ];
+  if (!opts.fromSheet) {
+    items.push({ label: 'Renommer', action: () => startRename(svc, entry) });
+  }
+  items.push({ label: 'Retirer de l\u2019historique', danger: true, action: () =>
+    done(() => api.removeEntry(svc.id, entry.url)) });
+  openMenu(entry.title, items);
 }
 
 // Renommage inline : l'entrée devient un champ, Enter valide, blur valide,
@@ -205,6 +259,139 @@ function startRename(svc, entry) {
   });
   input.addEventListener('blur', () => done(true));
 }
+
+// --- Dock (écran Chats) : logos des services actifs, accès direct au chat
+// sans passer par l'écran Services. Caché si aucun service actif.
+
+function renderDock() {
+  const dock = $('#quick-dock');
+  const active = services.filter((s) => s.enabled);
+  dock.classList.toggle('hidden', active.length === 0);
+  dock.innerHTML = '';
+  for (const svc of active) {
+    const btn = document.createElement('button');
+    btn.className = 'dock-btn';
+    btn.dataset.svcId = svc.id;
+    btn.title = svc.name;
+    btn.setAttribute('aria-label', 'Ouvrir ' + svc.name);
+    btn.innerHTML = logoHtml(svc, 'dock-fallback');
+    btn.addEventListener('click', () => openWebView(svc, svc.url));
+    dock.appendChild(btn);
+  }
+}
+
+// --- Réordonnancement du dock : appui long (350 ms) puis glisser.
+// L'ordre persiste dans le registre (api.reorderServices) et s'applique
+// aussi aux groupes de l'écran Chats et à la liste Services. ---
+
+(() => {
+  const dock = $('#quick-dock');
+  const LONG_PRESS = 350;
+  let press = null;
+  let suppressClick = false;
+
+  function beginDrag() {
+    if (!press) return;
+    press.dragging = true;
+    suppressClick = true;
+    const { btn, pid } = press;
+    press.children = [...dock.children];
+    press.idx = press.children.indexOf(btn);
+    press.slots = press.children.map((c) => c.offsetLeft);
+    press.width = btn.offsetWidth || 52;
+    press.step = press.children.length > 1 ? press.slots[1] - press.slots[0] : press.width + 12;
+    press.target = press.idx;
+    btn.classList.add('dragging');
+    dock.classList.add('dragging');
+    try { btn.setPointerCapture(pid); } catch { /* environnement sans capture */ }
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  function shiftOthers() {
+    const { children, idx, target, step } = press;
+    children.forEach((c, i) => {
+      if (i === idx) return;
+      let shift = 0;
+      if (target < idx && i >= target && i < idx) shift = step;
+      else if (target > idx && i > idx && i <= target) shift = -step;
+      c.style.transform = shift ? `translateX(${shift}px)` : '';
+    });
+  }
+
+  dock.addEventListener('pointerdown', (ev) => {
+    const btn = ev.target.closest('.dock-btn');
+    if (!btn) return;
+    suppressClick = false;
+    press = { btn, pid: ev.pointerId, startX: ev.clientX, dragging: false };
+    press.timer = setTimeout(beginDrag, LONG_PRESS);
+  });
+
+  // Android : sans ceci, la WebView prend le geste en charge (scroll du dock)
+  // dès le premier mouvement et envoie pointercancel — le drag est impossible.
+  // touchmove est évalué au début du geste : preventDefault ne bloque que
+  // pendant le drag ; le scroll normal du dock reste utilisable.
+  dock.addEventListener('touchmove', (ev) => {
+    if (press && press.dragging) ev.preventDefault();
+  }, { passive: false });
+
+  dock.addEventListener('pointermove', (ev) => {
+    if (!press) return;
+    if (!press.dragging) {
+      // Déplacement avant le long press : on laisse le dock défiler.
+      if (Math.abs(ev.clientX - press.startX) > 8) clearTimeout(press.timer);
+      return;
+    }
+    const dx = ev.clientX - press.startX;
+    const { btn, slots, idx, children, width } = press;
+    btn.style.transform = `translateX(${dx}px) scale(1.08)`;
+    // Beaucoup de services : suivre le doigt près des bords du dock.
+    const r = dock.getBoundingClientRect();
+    if (ev.clientX > r.right - 44) dock.scrollLeft += 8;
+    else if (ev.clientX < r.left + 44) dock.scrollLeft -= 8;
+    const center = slots[idx] + dx + width / 2;
+    let target = 0;
+    for (let i = 0; i < children.length; i++) {
+      if (i !== idx && center > slots[i] + width / 2) target++;
+    }
+    if (target !== press.target) {
+      press.target = target;
+      shiftOthers();
+    }
+  });
+
+  async function endDrag(cancelled) {
+    if (!press) return;
+    clearTimeout(press.timer);
+    const { btn, dragging, target, idx, children } = press;
+    press = null;
+    if (!dragging) return;
+    btn.classList.remove('dragging');
+    dock.classList.remove('dragging');
+    if (!cancelled && target !== idx) {
+      const others = children.filter((_, i) => i !== idx);
+      const ids = [...others.slice(0, target), btn, ...others.slice(target)]
+        .map((c) => c.dataset.svcId);
+      services = await api.reorderServices(ids);
+      renderDock();
+      renderChats();
+      renderServices();
+      toast('Ordre des services mis à jour.');
+    } else {
+      renderDock(); // transform remis à zéro
+    }
+  }
+
+  dock.addEventListener('pointerup', () => endDrag(false));
+  dock.addEventListener('pointercancel', () => endDrag(true));
+  // Après un glisser, le clic résiduel ne doit pas ouvrir le service.
+  dock.addEventListener('click', (ev) => {
+    if (suppressClick) {
+      suppressClick = false;
+      ev.stopPropagation();
+      ev.preventDefault();
+    }
+  }, true);
+})();
 
 // --- Écran Services ---
 
@@ -459,6 +646,7 @@ async function reload() {
   history = await api.getHistory();
   renderChats();
   renderServices();
+  renderDock();
 }
 
 $('#search').addEventListener('input', renderChats);

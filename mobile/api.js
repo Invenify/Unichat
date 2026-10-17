@@ -74,6 +74,18 @@ export const api = {
     return entries.length;
   },
 
+  // Réordonne le registre (drag & drop du dock) : les ids listés passent en
+  // tête dans cet ordre ; les absents restent en fin, ordre conservé.
+  async reorderServices(orderedIds) {
+    const services = read(K.services, []);
+    const ids = (Array.isArray(orderedIds) ? orderedIds : [])
+      .filter((id) => services.some((s) => s.id === id));
+    const next = ids.map((id) => services.find((s) => s.id === id));
+    for (const s of services) if (!ids.includes(s.id)) next.push(s);
+    write(K.services, next);
+    return next;
+  },
+
   // --- Historique des conversations (moteur de titres) ---
 
   async getHistory() {

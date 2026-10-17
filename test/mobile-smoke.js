@@ -61,6 +61,15 @@ const check = (label, cond) => {
   check('ré-import → 0 doublon', (await api.importRegistry([{ name: 'DeepSeek', url: 'https://chat.deepseek.com' }])) === 0);
   check('importé préserve les champs', (await api.getServices()).some((s) => s.accent === '#4d6bfe'));
 
+  // Réordonnancement (drag & drop du dock) : ids listés en tête dans cet
+  // ordre, ids absents en fin dans leur ordre actuel.
+  const deep = (await api.getServices()).find((s) => s.name === 'DeepSeek');
+  const ro = await api.reorderServices([deep.id, 'svc-inconnu']);
+  check('reorder : id listé en tête', ro[0].id === deep.id);
+  check('reorder : absents en fin, ordre conservé', ro.length === 2 && ro[1].id === svc.id);
+  check('reorder persisté', (await api.getServices())[0].id === deep.id);
+  await api.reorderServices([svc.id, deep.id]); // retour à l'état initial
+
   // analyzeUrl : complétion via le catalogue (avant le fetch natif, phase 6)
   const meta = await api.analyzeUrl('chat.nexio.ovh');
   check('analyzeUrl normalise https', meta.url === 'https://chat.nexio.ovh');
