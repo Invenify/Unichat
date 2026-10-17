@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "icon": "node scripts/make-icon.js",
+    "icon:android": "node scripts/make-android-icons.js",
     "mobile": "node scripts/build-mobile.js",
     "mobile:sync": "npm run mobile && cap sync android",
     "mobile:open": "cap open android",

@@ -211,10 +211,10 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
-function encodePng(raw) {
+function encodePng(raw, width = SIZE, height = width) {
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(SIZE, 0);
-  ihdr.writeUInt32BE(SIZE, 4);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // RGBA
   return Buffer.concat([
@@ -233,4 +233,4 @@ fs.writeFileSync(OUT_LOGO, png);
 console.log('OK ' + OUT_ICON + ' (' + png.length + ' octets)');
 console.log('OK ' + OUT_LOGO);
 
-module.exports = { render, layers };
+module.exports = { render, layers, encodePng };
