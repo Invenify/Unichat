@@ -21,6 +21,21 @@ function onError() {
   // Échec silencieux : l'UI reste utilisable, la session native aussi.
 }
 
+// Le pont Android (JSExport) renvoie un handle direct { remove() } — pas une
+// Promise comme ailleurs : les deux formes sont acceptées ici.
+function subscribe(event, cb) {
+  const p = plugin();
+  if (!p) return () => {};
+  let handle = null;
+  const ret = p.addListener(event, cb);
+  if (ret && typeof ret.then === 'function') {
+    ret.then((h) => { handle = h; }).catch(onError);
+  } else {
+    handle = ret;
+  }
+  return () => { if (handle && handle.remove) handle.remove(); };
+}
+
 export function nativeWebViews() {
   return plugin() !== null;
 }
@@ -76,19 +91,11 @@ export const webviews = {
 
   // events "page" { id, url, title } — titre/URL de la vue → historique.
   onPage(cb) {
-    const p = plugin();
-    if (!p) return () => {};
-    let handle = null;
-    p.addListener('page', cb).then((h) => { handle = h; }).catch(onError);
-    return () => { if (handle && handle.remove) handle.remove(); };
+    return subscribe('page', cb);
   },
 
   // "closed" : le retour système a fermé la vue → recacher le holder.
   onClosed(cb) {
-    const p = plugin();
-    if (!p) return () => {};
-    let handle = null;
-    p.addListener('closed', cb).then((h) => { handle = h; }).catch(onError);
-    return () => { if (handle && handle.remove) handle.remove(); };
+    return subscribe('closed', cb);
   },
 };
