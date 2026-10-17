@@ -22,6 +22,14 @@
   <a href="#english">English</a>
 </p>
 
+<p align="center">
+  <strong>Téléchargez l'application :</strong>
+  <a href="https://github.com/Invenify/Unichat/releases/tag/0.1.0">Release 0.1.0</a>
+  &nbsp;·&nbsp;
+  <strong>Download the app:</strong>
+  <a href="https://github.com/Invenify/Unichat/releases/tag/0.1.0">Release 0.1.0</a>
+</p>
+
 ---
 
 ## Français
@@ -35,6 +43,17 @@ et toutes vos conversations remontent dans une sidebar unique.
 
 La règle d'or du projet : **aucun code spécifique à un service**. Un chat IA
 inconnu demain ? Collez son URL, il fonctionne immédiatement.
+
+### Télécharger
+
+Binaires prêts à installer sur la [release 0.1.0](https://github.com/Invenify/Unichat/releases/tag/0.1.0) :
+
+| Plateforme | Fichier |
+|---|---|
+| Windows x64 | `UniChat Setup 0.1.0.exe` |
+| Linux x64 | `UniChat-0.1.0.AppImage` |
+| macOS arm64 | `UniChat-0.1.0-arm64-mac.zip` (non signé : clic droit → Ouvrir au premier lancement) |
+| Android | `UniChat-0.1.0.apk` (build debug : autoriser les sources inconnues) |
 
 ### Fonctionnalités
 
@@ -141,6 +160,17 @@ surface in one unified sidebar.
 
 The project's golden rule: **zero service-specific code**. An unknown AI chat
 shows up tomorrow? Paste its URL, it just works.
+
+### Download
+
+Ready-to-install binaries on [release 0.1.0](https://github.com/Invenify/Unichat/releases/tag/0.1.0):
+
+| Platform | File |
+|---|---|
+| Windows x64 | `UniChat Setup 0.1.0.exe` |
+| Linux x64 | `UniChat-0.1.0.AppImage` |
+| macOS arm64 | `UniChat-0.1.0-arm64-mac.zip` (unsigned: right-click → Open on first launch) |
+| Android | `UniChat-0.1.0.apk` (debug build: allow unknown sources) |
 
 ### Features
 
