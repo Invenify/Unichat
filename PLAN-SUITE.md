@@ -82,6 +82,14 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Hibernation (desktop, Réglages → Ressources)** : 0 (jamais, défaut) /
+  5 / 15 / 30 / 60 min. Veilleuse 30 s dans le main : toute vue ni active,
+  ni split, pas affichée depuis plus de X minutes → `hibernateView`
+  (removeChildView + webContents.close → renderer libéré, l'URL courante
+  est mémorisée dans `wakeUrls`). Réveil : `showService` recrée la vue sur
+  cette URL (session dans la partition persist:<id>). JAMAIS pendant un
+  battle (`armedServiceId !== null`). Attention : une IA cachée en train
+  de GENERER perd sa réponse à la mise en veille — d'où le défaut à 0.
 - **Rétention de l'historique (Réglages → Historique)** : 0 (illimité,
   défaut) / 30 / 90 / 365 jours. Desktop : `conv-store.purgeOlderThan`
   (sur updatedAt), purgé au changement du réglage ET au boot. Mobile :

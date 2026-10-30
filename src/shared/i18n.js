@@ -136,6 +136,12 @@ const DICT = {
     retention30: "30 jours",
     retention90: "90 jours",
     retention365: "1 an",
+    resourcesSection: "Ressources",
+    hibernateHint: "Mettre en veille les IA non affichées pour libérer la mémoire — réveil au clic, session conservée. Jamais pendant un battle.",
+    hibernate5: "5 min",
+    hibernate15: "15 min",
+    hibernate30: "30 min",
+    hibernate60: "1 h",
   },
 
   en: {
@@ -271,6 +277,12 @@ const DICT = {
     retention30: "30 days",
     retention90: "90 days",
     retention365: "1 year",
+    resourcesSection: "Resources",
+    hibernateHint: "Put unused AIs to sleep to free memory — wake on click, session kept. Never during a battle.",
+    hibernate5: "5 min",
+    hibernate15: "15 min",
+    hibernate30: "30 min",
+    hibernate60: "1 h",
   },
 
   de: {
@@ -406,6 +418,12 @@ const DICT = {
     retention30: "30 Tage",
     retention90: "90 Tage",
     retention365: "1 Jahr",
+    resourcesSection: "Ressourcen",
+    hibernateHint: "Nicht angezeigte KIs in den Ruhezustand versetzen, um Speicher zu sparen — Aufwachen per Klick, Sitzung bleibt. Nie während eines Battles.",
+    hibernate5: "5 Min.",
+    hibernate15: "15 Min.",
+    hibernate30: "30 Min.",
+    hibernate60: "1 Std.",
   },
 
   es: {
@@ -541,6 +559,12 @@ const DICT = {
     retention30: "30 días",
     retention90: "90 días",
     retention365: "1 año",
+    resourcesSection: "Recursos",
+    hibernateHint: "Poner en reposo las IA no mostradas para liberar memoria — se despiertan al hacer clic, sesión conservada. Nunca durante una batalla.",
+    hibernate5: "5 min",
+    hibernate15: "15 min",
+    hibernate30: "30 min",
+    hibernate60: "1 h",
   },
 
   it: {
@@ -676,6 +700,12 @@ const DICT = {
     retention30: "30 giorni",
     retention90: "90 giorni",
     retention365: "1 anno",
+    resourcesSection: "Risorse",
+    hibernateHint: "Metti in pausa le IA non visualizzate per liberare memoria — riattivate al clic, sessione conservata. Mai durante una battaglia.",
+    hibernate5: "5 min",
+    hibernate15: "15 min",
+    hibernate30: "30 min",
+    hibernate60: "1 h",
   },
 };
 

@@ -27,6 +27,45 @@ let activeServiceId = null;
 let splitServiceId = null; // 2e moitié de l'écran partagé (serviceId)
 let modalOpen = false; // modal renderer ouverte → vues masquées (elles couvrent la fenêtre)
 
+// Hibernation des IA non affichées (réglage « Ressources ») : le processus
+// renderer est libéré, la SESSION survit (partition persist:<id> sur
+// disque), et la vue est recréée au clic sur sa dernière page. Jamais
+// pendant un battle (les IA cachées peuvent encore générer une réponse).
+const lastShown = new Map(); // serviceId -> dernier affichage
+const wakeUrls = new Map(); // serviceId -> URL au moment de la mise en veille
+let hibernateTimer = null;
+
+function noteShown(serviceId) {
+  lastShown.set(serviceId, Date.now());
+}
+
+function hibernateView(serviceId) {
+  const view = views.get(serviceId);
+  if (!view) return;
+  const url = view.webContents.getURL();
+  if (url) wakeUrls.set(serviceId, url);
+  mainWindow.contentView.removeChildView(view);
+  view.webContents.close(); // libère le processus renderer
+  views.delete(serviceId);
+}
+
+function startHibernationWatchdog() {
+  if (hibernateTimer) clearInterval(hibernateTimer);
+  hibernateTimer = setInterval(() => {
+    const minutes = settings.get().hibernateMinutes;
+    if (!minutes || minutes <= 0) return;
+    if (armedServiceId !== null) return; // battle en cours
+    const cutoff = Date.now() - minutes * 60000;
+    for (const [id] of views) {
+      if (id === activeServiceId) continue;
+      if (id === splitServiceId) continue;
+      const shown = lastShown.get(id) || 0;
+      if (shown > cutoff) continue;
+      hibernateView(id);
+    }
+  }, 30000);
+}
+
 // Systray : fermer la fenêtre la cache (l'app tourne en arrière-plan),
 // le tray la restaure. isQuitting distingue « vraie » fermeture et cachage.
 let tray = null;
@@ -100,7 +139,7 @@ function applyTrackerBlock(ses) {
   }
 }
 
-function createServiceView(service) {
+function createServiceView(service, startUrl) {
   if (views.has(service.id)) return views.get(service.id);
   const ses = session.fromPartition(`persist:${service.id}`);
   applyTrackerBlock(ses);
@@ -152,18 +191,27 @@ function createServiceView(service) {
   });
 
   if (view.webContents.getURL() === '') {
-    view.webContents.loadURL(service.url).catch(() => {});
+    // Hibernation : la vue reprend sur sa dernière page, pas la racine.
+    view.webContents.loadURL(startUrl || service.url).catch(() => {});
   }
   layoutViews();
   return view;
 }
 
 function showService(serviceId) {
-  if (!views.has(serviceId)) return;
+  const svc = registry.get(serviceId);
+  if (!svc || svc.enabled === false) return;
+  // Vue en veille (hibernation) ou jamais créée : réveil — la session vit
+  // dans la partition persist:<id>, la page est rechargée à sa dernière URL.
+  if (!views.has(serviceId)) {
+    createServiceView(svc, wakeUrls.get(serviceId) || null);
+    wakeUrls.delete(serviceId);
+  }
   activeServiceId = serviceId;
   // Le service secondaire devient principal (clic sur son en-tête) :
   // il repasse en pleine largeur, l'écran partagé se referme.
   if (splitServiceId === serviceId) splitServiceId = null;
+  noteShown(serviceId);
   layoutViews();
   pushActiveUrl();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -298,6 +346,14 @@ ipcMain.handle('set-history-retention', (_e, days) => {
   return result.historyRetentionDays;
 });
 
+// Hibernation des IA non affichées (Réglages → Ressources) : la veilleuse
+// tourne dans le main, chaque tick relit le réglage.
+ipcMain.handle('get-hibernate-minutes', () => settings.get().hibernateMinutes);
+ipcMain.handle('set-hibernate-minutes', (_e, minutes) => {
+  const result = settings.setHibernateMinutes(minutes);
+  return result ? result.hibernateMinutes : null;
+});
+
 // Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a
 // besoin pour placer les WebContentsView.
 ipcMain.handle('get-sidebar-collapsed', () => settings.get().sidebarCollapsed === true);
@@ -387,8 +443,16 @@ ipcMain.handle('set-modal-open', (_e, open) => {
 });
 
 ipcMain.handle('navigate', (_e, serviceId, url) => {
-  const view = views.get(serviceId);
-  if (!view) return false;
+  let view = views.get(serviceId);
+  // Vue en veille : réveil direct sur l'URL demandée (conversation).
+  if (!view) {
+    const svc = registry.get(serviceId);
+    if (!svc) return false;
+    createServiceView(svc, url);
+    wakeUrls.delete(serviceId);
+    showService(serviceId);
+    return true;
+  }
   showService(serviceId);
   view.webContents.loadURL(url).catch(() => {});
   return true;
@@ -636,6 +700,7 @@ if (!gotInstanceLock) {
 
   createWindow();
   createTray();
+  startHibernationWatchdog();
 
   // Rétention de l'historique : purge des conversations trop anciennes au
   // démarrage (réglage « Historique », 0 = illimité).

@@ -4,6 +4,7 @@
 // « language » : 'system' (suit l'OS) ou code i18n (fr, en, de, es, it).
 // « blockTrackers » : coupe le pistage/la pub dans les vues (desktop).
 // « historyRetentionDays » : purge des conversations plus anciennes (0/30/90/365).
+// « hibernateMinutes » : mise en veille des IA non affichées (0 = jamais).
 
 const fs = require('fs');
 const path = require('path');
@@ -11,9 +12,10 @@ const path = require('path');
 const THEMES = ['system', 'light', 'dark'];
 const LANG_CODES = ['system', 'fr', 'en', 'de', 'es', 'it'];
 const RETENTION_DAYS = [0, 30, 90, 365];
+const HIBERNATE_MINUTES = [0, 5, 15, 30, 60];
 
 let dataDir = null;
-let data = { theme: 'system', sidebarCollapsed: false, language: 'system', blockTrackers: false, historyRetentionDays: 0 };
+let data = { theme: 'system', sidebarCollapsed: false, language: 'system', blockTrackers: false, historyRetentionDays: 0, hibernateMinutes: 0 };
 
 function filePath() {
   return path.join(dataDir, 'settings.json');
@@ -31,6 +33,7 @@ function load() {
   if (!LANG_CODES.includes(data.language)) data.language = 'system';
   data.blockTrackers = data.blockTrackers === true;
   if (!RETENTION_DAYS.includes(data.historyRetentionDays)) data.historyRetentionDays = 0;
+  if (!HIBERNATE_MINUTES.includes(data.hibernateMinutes)) data.hibernateMinutes = 0;
 }
 
 function save() {
@@ -73,6 +76,12 @@ module.exports = {
   setHistoryRetention(days) {
     if (!RETENTION_DAYS.includes(days)) return null;
     data.historyRetentionDays = days;
+    save();
+    return { ...data };
+  },
+  setHibernateMinutes(minutes) {
+    if (!HIBERNATE_MINUTES.includes(minutes)) return null;
+    data.hibernateMinutes = minutes;
     save();
     return { ...data };
   },

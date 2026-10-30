@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('unichat', {
   setBlockTrackers: (on) => ipcRenderer.invoke('set-block-trackers', on),
   getHistoryRetention: () => ipcRenderer.invoke('get-history-retention'),
   setHistoryRetention: (days) => ipcRenderer.invoke('set-history-retention', days),
+  getHibernateMinutes: () => ipcRenderer.invoke('get-hibernate-minutes'),
+  setHibernateMinutes: (minutes) => ipcRenderer.invoke('set-hibernate-minutes', minutes),
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),

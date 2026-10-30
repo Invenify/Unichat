@@ -355,6 +355,12 @@ const check = (label, cond) => {
   check('settings rétention persistée', settings.init(path.join(tmp, 'settings')).historyRetentionDays === 90);
   check('settings refuse rétention inconnue', settings.setHistoryRetention(42) === null);
 
+  // Hibernation des IA non affichées (réglage « Ressources »)
+  check('settings hibernation défaut 0', settings.init(path.join(tmp, 'settings')).hibernateMinutes === 0);
+  check('settings setHibernateMinutes 30', settings.setHibernateMinutes(30).hibernateMinutes === 30);
+  check('settings hibernation persistée', settings.init(path.join(tmp, 'settings')).hibernateMinutes === 30);
+  check('settings refuse hibernation inconnue', settings.setHibernateMinutes(7) === null);
+
   // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
   check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));
   i18n.setLang('fr');

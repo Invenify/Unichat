@@ -936,6 +936,7 @@ $('#split-toggle').addEventListener('click', () => setSplit(splitServiceId === n
 let languageSetting = 'system';
 let blockTrackers = false;
 let retentionDays = 0;
+let hibernateMinutes = 0;
 
 function openSettings() {
   updateSettingsRows();
@@ -958,6 +959,9 @@ function updateSettingsRows() {
   $('#block-trackers').classList.toggle('on', blockTrackers);
   document.querySelectorAll('#retention-row .settings-opt').forEach((b) => {
     b.classList.toggle('on', parseInt(b.dataset.days, 10) === retentionDays);
+  });
+  document.querySelectorAll('#hibernate-row .settings-opt').forEach((b) => {
+    b.classList.toggle('on', parseInt(b.dataset.min, 10) === hibernateMinutes);
   });
 }
 
@@ -1002,6 +1006,18 @@ document.querySelectorAll('#retention-row .settings-opt').forEach((btn) => {
     const applied = await api.setHistoryRetention(parseInt(btn.dataset.days, 10));
     if (applied !== null) {
       retentionDays = applied;
+      updateSettingsRows();
+    }
+  });
+});
+
+// Hibernation des IA non affichées : la veilleuse du main relit le réglage
+// à chaque tick, le changement s'applique sans redémarrage.
+document.querySelectorAll('#hibernate-row .settings-opt').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const applied = await api.setHibernateMinutes(parseInt(btn.dataset.min, 10));
+    if (applied !== null) {
+      hibernateMinutes = applied;
       updateSettingsRows();
     }
   });
@@ -1358,6 +1374,7 @@ api.onActiveUrlChanged((url) => {
   languageSetting = (await api.getLanguage()) || 'system';
   blockTrackers = (await api.getBlockTrackers()) === true;
   retentionDays = (await api.getHistoryRetention()) || 0;
+  hibernateMinutes = (await api.getHibernateMinutes()) || 0;
   // Textes statiques traduits + <html lang> avant le premier rendu.
   applyI18n();
   updateRelayButton();
