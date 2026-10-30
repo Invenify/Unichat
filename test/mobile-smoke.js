@@ -77,6 +77,24 @@ const check = (label, cond) => {
   const meta2 = await api.analyzeUrl('https://mon-chat.example.com');
   check('analyzeUrl fallback hostname', meta2.name === 'mon-chat.example.com' && meta2.accent === '#6c5ce7');
 
+  // Moteur de titres : parité rootChat / titres génériques avec le desktop
+  // (Duck.ai = service racine ; Copilot = racine refusée)
+  const duckEntry = catalog.find('https://duck.ai');
+  check('Duck.ai au catalogue, rootChat', !!duckEntry && duckEntry.rootChat === true);
+  const duckSvc = await api.addService({ ...duckEntry, enabled: true });
+  const d1 = await api.recordNavigation(duckSvc, 'https://duck.ai/', 'Duck.ai');
+  check('Duck.ai : repli « Conversation en cours » à la racine', d1 && d1.title === 'Conversation en cours');
+  const d2 = await api.recordNavigation(duckSvc, 'https://duck.ai/', 'Meilleure recette de paella');
+  check('Duck.ai : vrai titre remplace le repli', d2 && d2.title === 'Meilleure recette de paella');
+  check('Duck.ai : une seule entrée (dédoublonnage racine)', (await api.getHistory()).filter((e) => e.serviceId === duckSvc.id).length === 1);
+  const copilotEntry = catalog.find('https://copilot.microsoft.com');
+  const copSvc = await api.addService({ ...copilotEntry, enabled: true });
+  check('Copilot : racine ignorée (pas de rootChat)', (await api.recordNavigation(copSvc, 'https://copilot.microsoft.com/', 'Copilot')) === null);
+  // Historique de test nettoyé : les assertions de fin supposent un
+  // historique ne contenant que celui du service principal.
+  await api.removeServiceHistory(duckSvc.id);
+  await api.removeServiceHistory(copSvc.id);
+
   // Thème
   check('thème défaut system', (await api.getTheme()) === 'system');
   check('setTheme dark', (await api.setTheme('dark')) === 'dark');

@@ -157,4 +157,48 @@ function purgeMatching(serviceId, regexStr) {
   return n;
 }
 
-module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching };
+// Purge des entrées dont le titre est « générique » (genericTitleRegex du
+// service, ex. « Copilot ») : enregistrées avant l'ajout du filtre, elles
+// n'ont jamais été des conversations. Les titres renommés manuellement ne
+// sont pas touchés. Renvoie le nombre d'entrées retirées.
+function purgeMatchingTitle(serviceId, regexStr) {
+  let re;
+  try {
+    re = new RegExp(regexStr, 'i');
+  } catch {
+    return 0;
+  }
+  const before = entries.length;
+  entries = entries.filter((e) => e.serviceId !== serviceId || e.manual === true || !re.test(e.title));
+  const n = before - entries.length;
+  if (n > 0) saveSoon();
+  return n;
+}
+
+// Purge des entrées « racine » d'un service SANS rootChat (enregistrées
+// par une version antérieure, ex. « Conversation en cours » Copilot/Lumo) :
+// la racine n'est plus jamais une conversation, ces entrées sont mortes.
+// Renvoie le nombre d'entrées retirées.
+function purgeRoot(serviceId, serviceUrl) {
+  let root;
+  try {
+    root = new URL(serviceUrl);
+  } catch {
+    return 0;
+  }
+  const isRootUrl = (u) => {
+    try {
+      const b = new URL(u);
+      return b.origin === root.origin && b.pathname.replace(/\/+$/, '') === root.pathname.replace(/\/+$/, '');
+    } catch {
+      return false;
+    }
+  };
+  const before = entries.length;
+  entries = entries.filter((e) => e.serviceId !== serviceId || !isRootUrl(e.url));
+  const n = before - entries.length;
+  if (n > 0) saveSoon();
+  return n;
+}
+
+module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching, purgeMatchingTitle, purgeRoot };

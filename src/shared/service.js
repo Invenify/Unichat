@@ -3,7 +3,7 @@
 // Un service = une entrée JSON, jamais de code dédié.
 
 // Champs modifiables via update().
-const FIELDS = ['name', 'url', 'accent', 'accent2', 'logo', 'customLogo', 'excludeRegex', 'blockNavRegex', 'stripTitleRegex', 'enabled'];
+const FIELDS = ['name', 'url', 'accent', 'accent2', 'logo', 'customLogo', 'excludeRegex', 'blockNavRegex', 'stripTitleRegex', 'rootChat', 'genericTitleRegex', 'enabled'];
 
 // Id court, stable : crypto.randomUUID côté Node et navigateur, avec
 // repli au cas où l'API ne serait pas disponible.
@@ -15,7 +15,7 @@ function newId() {
   return 'svc-' + Math.random().toString(16).slice(2, 10);
 }
 
-function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, stripTitleRegex, enabled }) {
+function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex, blockNavRegex, stripTitleRegex, rootChat, genericTitleRegex, enabled }) {
   return {
     id: newId(),
     name,
@@ -31,6 +31,12 @@ function mkService({ name, url, accent, accent2, logo, customLogo, excludeRegex,
     // stripTitleRegex : suffixe retiré des titres de page (ex. Open WebUI
     // « <chat> / Open WebUI » → on garde le nom du chat).
     stripTitleRegex: stripTitleRegex || null,
+    // rootChat : la conversation vit sur la page racine (Copilot, Lumo) —
+    // une entrée unique « conversation courante » est enregistrée.
+    rootChat: rootChat === true,
+    // genericTitleRegex : titres de marque (ex. « Copilot ») jamais
+    // enregistrés comme noms de conversation.
+    genericTitleRegex: genericTitleRegex || null,
     enabled: enabled !== false,
   };
 }
@@ -54,6 +60,8 @@ function importable(existing, incoming) {
         customLogo: s.customLogo,
         excludeRegex: s.excludeRegex,
         stripTitleRegex: s.stripTitleRegex,
+        rootChat: s.rootChat,
+        genericTitleRegex: s.genericTitleRegex,
       })
     );
   }

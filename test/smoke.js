@@ -9,6 +9,8 @@ const ROOT = path.resolve(__dirname, '..');
 const registry = require(path.join(ROOT, 'src/main/registry'));
 const convStore = require(path.join(ROOT, 'src/engine/conv-store'));
 const titleTracker = require(path.join(ROOT, 'src/engine/title-tracker'));
+const titleRules = require(path.join(ROOT, 'src/shared/title-rules'));
+const i18n = require(path.join(ROOT, 'src/shared/i18n'));
 const metadata = require(path.join(ROOT, 'src/main/metadata'));
 const catalog = require(path.join(ROOT, 'src/shared/catalog'));
 const logos = require(path.join(ROOT, 'src/main/logos'));
@@ -35,6 +37,8 @@ const check = (label, cond) => {
   check('tous les logos locaux existent', catalogList.every((c) => c.logo.startsWith('assets/logos/') && fs.existsSync(path.join(ROOT, 'src/renderer', c.logo))));
   const euria = catalogList.find((c) => c.url.includes('euria.infomaniak.com'));
   check('Euria bloque KSuite', !!euria && euria.blockNavRegex.includes('ksuite'));
+  const duckEntry = catalogList.find((c) => c.name === 'Duck.ai');
+  check('Duck.ai : rootChat + filtre de titres génériques', duckEntry.rootChat === true && !!duckEntry.genericTitleRegex && !!duckEntry.stripTitleRegex);
   check('chaque entrée a nom, url, couleurs, logo', catalogList.every((c) => c.name && c.url && c.accent && c.accent2 && c.logo));
   check('sameOrigin ignore les paramètres', catalog.sameOrigin('https://euria.infomaniak.com/?ksuite-mode=main', 'https://euria.infomaniak.com') === true);
   check('sameOrigin distingue les hôtes', catalog.sameOrigin('https://a.com', 'https://b.com') === false);
@@ -160,6 +164,29 @@ const check = (label, cond) => {
   check('purgeMatching idempotent (2e passage → 0)', convStore.purgeMatching('svc-test', '/app$') === 0);
   convStore.removeService('svc-test');
 
+  // conv-store : purgeMatchingTitle (titres de marque enregistrés avant le
+  // filtre genericTitleRegex, ex. « Copilot » à la racine)
+  convStore.upsert('svc-gen', 'https://copilot.microsoft.com/c/1', 'Copilot');
+  convStore.upsert('svc-gen', 'https://copilot.microsoft.com/c/2', 'Mon Copilot');
+  convStore.upsert('svc-gen', 'https://copilot.microsoft.com/c/3', 'Projet X');
+  convStore.rename('svc-gen', 'https://copilot.microsoft.com/c/3', 'Copilot'); // renommé « Copilot » à la main
+  check('purgeMatchingTitle retire les titres génériques auto', convStore.purgeMatchingTitle('svc-gen', '^(Microsoft\\s+)?Copilot$') === 1);
+  const genAll = convStore.listAll().filter((e) => e.serviceId === 'svc-gen');
+  check('purgeMatchingTitle garde les titres non génériques', genAll.some((e) => e.url.endsWith('/c/2') && e.title === 'Mon Copilot'));
+  check('purgeMatchingTitle épargne les titres renommés à la main', genAll.some((e) => e.url.endsWith('/c/3') && e.title === 'Copilot'));
+  check('purgeMatchingTitle idempotent', convStore.purgeMatchingTitle('svc-gen', '^(Microsoft\\s+)?Copilot$') === 0);
+  convStore.removeService('svc-gen');
+
+  // conv-store : purgeRoot (entrées racine d'un service sans rootChat,
+  // enregistrées par une version précédente puis retirées du catalogue)
+  convStore.upsert('svc-root', 'https://copilot.microsoft.com/', 'Copilot — conversation en cours');
+  convStore.upsert('svc-root', 'https://copilot.microsoft.com/?form=CHS00N', 'Autre repli');
+  convStore.upsert('svc-root', 'https://copilot.microsoft.com/c/abc', 'Vrai chat');
+  check('purgeRoot retire les entrées racine', convStore.purgeRoot('svc-root', 'https://copilot.microsoft.com') === 2);
+  check('purgeRoot garde les vraies conversations', convStore.listAll().every((e) => e.url.endsWith('/c/abc')));
+  check('purgeRoot idempotent', convStore.purgeRoot('svc-root', 'https://copilot.microsoft.com') === 0);
+  convStore.removeService('svc-root');
+
   // title-tracker : filtres racine / exclusions / https
   let captured = null;
   const fakeWC = {
@@ -205,6 +232,59 @@ const check = (label, cond) => {
   check('Le Chat : /chat (nouvelle conversation) ignoré', titleTracker.isChatUrl(lechat, 'https://chat.mistral.ai/chat') === false);
   check('Le Chat : /chat/<id> enregistré', titleTracker.isChatUrl(lechat, 'https://chat.mistral.ai/chat/abc') === true);
 
+  // Navigation SPA (History API) : did-navigate-in-page, invisible de did-navigate.
+  captured = null;
+  fakeWC._url = svc.url + '/chat/789';
+  fakeWC._title = 'Troisième chat';
+  fakeWC.listeners['did-navigate-in-page']({}, svc.url + '/chat/789', true);
+  check('navigation SPA in-page enregistrée', captured && captured.title === 'Troisième chat');
+  captured = null;
+  fakeWC.listeners['did-navigate-in-page']({}, svc.url + '/iframe', false);
+  check('navigation in-page hors main-frame ignorée', captured === null);
+
+  // Copilot / Lumo : retour au comportement d'origine — la racine n'est pas
+  // une conversation, rien ne s'enregistre (vide accepté par l'utilisateur).
+  const copilot = catalog.list().find((c) => c.name === 'Copilot');
+  check("Copilot : racine ignorée (pas de rootChat)", titleTracker.isChatUrl(copilot, 'https://copilot.microsoft.com/?form=CHS00N') === false);
+  const lumo = catalog.list().find((c) => c.name === 'Lumo');
+  check("Lumo : racine ignorée (pas de rootChat)", titleTracker.isChatUrl(lumo, 'https://lumo.proton.me/') === false);
+  check('Lumo : /guest ignoré', titleTracker.isChatUrl(lumo, 'https://lumo.proton.me/guest') === false);
+
+  // Duck.ai : service racine — entrée « Conversation en cours » tant que
+  // le site ne publie que son titre de marque.
+  const duck = catalog.list().find((c) => c.name === 'Duck.ai');
+  check('Duck.ai : racine acceptée (rootChat)', titleTracker.isChatUrl(duck, 'https://duck.ai/') === true);
+  check('Duck.ai : titre de marque refusé', titleTracker.isRecordableTitle(duck, 'Duck.ai') === false);
+  check('Duck.ai : titre de conversation accepté', titleTracker.isRecordableTitle(duck, 'Idées de recettes vegan') === true);
+
+  // resolveTitle : décision partagée desktop/mobile (nettoyage → filtre
+  // générique → repli rootChat)
+  check('resolveTitle : vrai titre conservé', titleRules.resolveTitle(duck, 'https://duck.ai/', 'Idées de recettes vegan') === 'Idées de recettes vegan');
+  check('resolveTitle : repli « Conversation en cours » à la racine', titleRules.resolveTitle(duck, 'https://duck.ai/', 'Duck.ai') === 'Conversation en cours');
+  check('resolveTitle : null sans rootChat', titleRules.resolveTitle(copilot, 'https://copilot.microsoft.com/', 'Copilot') === null);
+  check('resolveTitle : null hors racine même avec rootChat', titleRules.resolveTitle(duck, 'https://duck.ai/chats', 'Duck.ai') === null);
+  check('resolveTitle : suffixe de marque retiré avant décision', titleRules.resolveTitle(duck, 'https://duck.ai/', 'Meilleure recette de paella - Duck.ai') === 'Meilleure recette de paella');
+
+  // Tracker de bout en bout sur un service racine : titre de marque →
+  // repli « Conversation en cours », vrai titre le remplace (et retour).
+  let rootCaptured = null;
+  const fakeRoot = {
+    _url: 'https://duck.ai/',
+    _title: '',
+    listeners: {},
+    on(ev, fn) { this.listeners[ev] = fn; },
+    getURL() { return this._url; },
+    getTitle() { return this._title; },
+  };
+  titleTracker.attach(fakeRoot, { ...duck, id: 'svc-duck' }, (e) => { rootCaptured = e; });
+  fakeRoot._title = 'Duck.ai';
+  fakeRoot.listeners['page-title-updated']({}, 'Duck.ai');
+  check("Duck.ai : marque → entrée « Conversation en cours »", rootCaptured && rootCaptured.title === 'Conversation en cours' && rootCaptured.url === 'https://duck.ai/');
+  fakeRoot.listeners['page-title-updated']({}, 'Idées de recettes vegan');
+  check('Duck.ai : vrai titre remplace le repli', rootCaptured && rootCaptured.title === 'Idées de recettes vegan');
+  fakeRoot.listeners['page-title-updated']({}, 'Duck.ai');
+  check("Duck.ai : marque → retour au repli", rootCaptured && rootCaptured.title === 'Conversation en cours');
+
   // metadata : analyse d'une vraie page (fetch réseau)
   try {
     const meta = await metadata.analyzeUrl('chat.mistral.ai');
@@ -227,6 +307,33 @@ const check = (label, cond) => {
   check('settings thème persisté', s2.theme === 'dark');
   check('settings refuse thème inconnu', settings.setTheme('neon') === null);
   check('settings THEMES', JSON.stringify(settings.THEMES) === JSON.stringify(['system', 'light', 'dark']));
+  check('settings sidebar non réduite par défaut', s1.sidebarCollapsed === false);
+  check('settings setSidebarCollapsed', settings.setSidebarCollapsed(true).sidebarCollapsed === true);
+  check('settings sidebar réduite persistée', settings.init(path.join(tmp, 'settings')).sidebarCollapsed === true);
+  check('settings setSidebarCollapsed(false) normalise', settings.setSidebarCollapsed('nimporte').sidebarCollapsed === false);
+  check('settings langue défaut system', settings.init(path.join(tmp, 'settings')).language === 'system');
+  check('settings setLanguage en', settings.setLanguage('en').language === 'en');
+  check('settings langue persistée', settings.init(path.join(tmp, 'settings')).language === 'en');
+  check('settings refuse langue inconnue', settings.setLanguage('klingon') === null);
+
+  // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
+  check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));
+  i18n.setLang('fr');
+  check('i18n fr par défaut', i18n.t('settings') === 'Réglages');
+  i18n.setLang('en');
+  check('i18n en', i18n.t('settings') === 'Settings');
+  check('i18n interpolation', i18n.t('battleLabel', { i: 1, n: 3, name: 'Le Chat' }) === 'Battle 1/3 · Le Chat');
+  check('i18n clé inconnue → clé', i18n.t('clé.inconnue') === 'clé.inconnue');
+  i18n.setLang('de');
+  check('i18n de', i18n.t('settings') === 'Einstellungen');
+  check('i18n locale de', i18n.locale() === 'de-DE');
+  check('i18n resolveLang system → navigateur', i18n.resolveLang('system', 'es-ES') === 'es');
+  check('i18n resolveLang forcé', i18n.resolveLang('it', 'en-US') === 'it');
+  check('i18n resolveLang inconnu → fr', i18n.resolveLang('system', 'zh-CN') === 'fr');
+  i18n.setLang('es');
+  check('i18n es', i18n.t('settings') === 'Ajustes');
+  i18n.setLang('it');
+  check('i18n it', i18n.t('settings') === 'Impostazioni');
 
   console.log(failures === 0 ? 'ALL TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);

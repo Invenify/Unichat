@@ -43,7 +43,45 @@ function isChatUrl(service, url) {
   }
   if (isAuthUrl(url)) return false;
   if (excluded(service, url)) return false;
-  return !isRoot(service.url, url);
+  if (isRoot(service.url, url)) {
+    // Certains services (Copilot, Lumo) vivent entièrement sur leur page
+    // racine : l'URL ne change jamais, seule l'entrée « conversation
+    // courante » est enregistrée (clé = racine, titre = titre de la page).
+    return service.rootChat === true;
+  }
+  return true;
+}
+
+// Titre « générique » (nom de marque seul, ex. « Copilot », « Proton Lumo »)
+// : ce n'est jamais le nom d'une conversation, on ne l'enregistre pas, même
+// hors racine — c'est le cas Copilot/Lumo : URL figée + titre de marque.
+function isRecordableTitle(service, title) {
+  const t = (title || '').trim();
+  if (t.length < 3) return false;
+  if (service.genericTitleRegex) {
+    try {
+      if (new RegExp(service.genericTitleRegex, 'i').test(t)) return false;
+    } catch {
+      // regex invalide : on ignore le filtre
+    }
+  }
+  const name = (service.name || '').trim().toLowerCase();
+  if (name && t.toLowerCase() === name) return false;
+  return true;
+}
+
+// Décision partagée desktop (title-tracker) / mobile (api.recordNavigation) :
+// le titre final à enregistrer, ou null si ce n'est pas une conversation.
+// 1. nettoyage du suffixe de marque (stripTitleRegex) ;
+// 2. filtre des titres génériques (isRecordableTitle) ;
+// 3. repli « Conversation en cours » pour un service racine (rootChat,
+//    ex. Duck.ai) dont le titre de page reste celui de la marque : sans
+//    repli, le service paraît simplement ne pas fonctionner.
+function resolveTitle(service, url, title) {
+  const clean = cleanTitle(service, title);
+  if (isRecordableTitle(service, clean)) return clean;
+  if (service.rootChat === true && isRoot(service.url, url)) return 'Conversation en cours';
+  return null;
 }
 
 // Suffixe de marque dans le titre de page (ex. Open WebUI « Hello /
@@ -60,4 +98,4 @@ function cleanTitle(service, title) {
   }
 }
 
-module.exports = { isRoot, isAuthUrl, isChatUrl, cleanTitle };
+module.exports = { isRoot, isAuthUrl, isChatUrl, cleanTitle, isRecordableTitle, resolveTitle };

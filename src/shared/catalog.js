@@ -15,6 +15,10 @@ const catalog = [
   // plusieurs comptes Google), /app est la liste des chats.
   { name: 'Gemini', url: 'https://gemini.google.com', accent: '#4285f4', accent2: '#9b72cb', logo: 'assets/logos/gemini.png', excludeRegex: '/app$', defaultOn: false },
   { name: 'Copilot', url: 'https://copilot.microsoft.com', accent: '#0f6cbd', accent2: '#56c2cd', logo: 'assets/logos/copilot.ico', defaultOn: false },
+  // Duck.ai (DuckDuckGo) : anonyme, sans compte, conversations jamais
+  // utilisées pour l'entraînement. Le chat vit sur la page racine → entrée
+  // unique « conversation en cours » tant que le site ne publie pas de titre.
+  { name: 'Duck.ai', url: 'https://duck.ai', accent: '#de5833', accent2: '#ff9d7a', logo: 'assets/logos/duck-ai.ico', rootChat: true, genericTitleRegex: '^(Duck\\.?ai\\b|DuckDuckGo)', stripTitleRegex: '\\s*[-–—|·]\\s*Duck\\.?ai\\s*$', defaultOn: false },
   { name: 'Perplexity', url: 'https://www.perplexity.ai', accent: '#20808d', accent2: '#52b9c9', logo: 'assets/logos/perplexity.svg', defaultOn: false },
   // Le Chat : la nouvelle conversation démarre à /chat, elle devient
   // /chat/<id> dès le premier message. /chat seul = page d'accueil.

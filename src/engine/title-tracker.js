@@ -5,18 +5,27 @@
 // Android dans src/shared/title-rules.js.
 
 const convStore = require('./conv-store');
-const { isChatUrl, cleanTitle } = require('../shared/title-rules');
+const { isChatUrl, cleanTitle, isRecordableTitle, resolveTitle } = require('../shared/title-rules');
 
 // À chaque navigation et à chaque changement de titre de la page.
+// Les SPA changent d'URL via l'API History sans rechargement :
+// did-navigate-in-page couvre ces cas que did-navigate ne voit jamais.
 function attach(webContents, service, onChange) {
   const record = (url, title) => {
     if (!url || !title) return;
     if (!isChatUrl(service, url)) return;
-    const entry = convStore.upsert(service.id, url, cleanTitle(service, title));
+    const final = resolveTitle(service, url, title);
+    if (!final) return;
+    const entry = convStore.upsert(service.id, url, final);
     if (entry && onChange) onChange(entry);
   };
 
   webContents.on('did-navigate', (_e, url) => {
+    record(url, webContents.getTitle() || null);
+  });
+
+  webContents.on('did-navigate-in-page', (_e, url, isMainFrame) => {
+    if (isMainFrame === false) return;
     record(url, webContents.getTitle() || null);
   });
 
@@ -28,4 +37,4 @@ function attach(webContents, service, onChange) {
   record(webContents.getURL(), webContents.getTitle());
 }
 
-module.exports = { attach, isChatUrl, cleanTitle };
+module.exports = { attach, isChatUrl, cleanTitle, isRecordableTitle };
