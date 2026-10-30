@@ -127,6 +127,8 @@ const DICT = {
     mobileBattleCopied: "Prompt copié — collez-le dans {name}",
     mobileBattleCopyFail: "Copie impossible : collez le prompt manuellement dans {name}",
     mobileWebViewNote: "La WebView native est disponible sur l'app Android uniquement.",
+    duplicateService: "Dupliquer (compte séparé)",
+    duplicatedToast: "« {name} » dupliqué — connexion indépendante.",
   },
 
   en: {
@@ -253,6 +255,8 @@ const DICT = {
     mobileBattleCopied: "Prompt copied — paste it in {name}",
     mobileBattleCopyFail: "Copy failed: paste the prompt manually in {name}",
     mobileWebViewNote: "The native WebView is available on the Android app only.",
+    duplicateService: "Duplicate (separate account)",
+    duplicatedToast: "“{name}” duplicated — independent login.",
   },
 
   de: {
@@ -379,6 +383,8 @@ const DICT = {
     mobileBattleCopied: "Prompt kopiert — in {name} einfügen",
     mobileBattleCopyFail: "Kopieren fehlgeschlagen: Prompt manuell in {name} einfügen",
     mobileWebViewNote: "Die native WebView ist nur in der Android-App verfügbar.",
+    duplicateService: "Duplizieren (getrenntes Konto)",
+    duplicatedToast: "„{name}“ dupliziert — eigene Anmeldung.",
   },
 
   es: {
@@ -505,6 +511,8 @@ const DICT = {
     mobileBattleCopied: "Prompt copiado — pégalo en {name}",
     mobileBattleCopyFail: "Copia imposible: pega el prompt manualmente en {name}",
     mobileWebViewNote: "La WebView nativa solo está disponible en la app de Android.",
+    duplicateService: "Duplicar (cuenta separada)",
+    duplicatedToast: "«{name}» duplicado — conexión independiente.",
   },
 
   it: {
@@ -631,6 +639,8 @@ const DICT = {
     mobileBattleCopied: "Prompt copiato — incollalo in {name}",
     mobileBattleCopyFail: "Copia impossibile: incolla il prompt manualmente in {name}",
     mobileWebViewNote: "La WebView nativa è disponibile solo nell'app Android.",
+    duplicateService: "Duplica (account separato)",
+    duplicatedToast: "«{name}» duplicato — accesso indipendente.",
   },
 };
 

@@ -82,6 +82,11 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Multi-comptes (desktop)** : « Dupliquer (compte séparé) » dans la
+  fenêtre d'édition (✎). Nouvelle entrée de registre = nouvel id = nouvelle
+  partition `persist:<id>` : connexion indépendante. Suffixe « (n) »
+  incrémenté. Pas d'équivalent mobile : la WebView Android partage le
+  cookie jar de l'app, une « duplication » y serait un mensonge.
 - **Réglages desktop (⚙ footer, Ctrl+,)** : overlay avec thème (boutons,
   synchronisé avec le cycleur du footer), langue, « Gérer les services… »,
   export/import du registre, à propos. Le footer ne garde que : thème,

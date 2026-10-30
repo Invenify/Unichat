@@ -28,6 +28,7 @@ let searchTerm = '';
 let analysis = null; // résultat du wizard en cours
 let wizardMode = 'add'; // 'add' | 'edit'
 let editServiceId = null;
+let editService = null; // service en cours d'édition (pour la duplication)
 let wizardLogoOriginal = ''; // logo affiché à l'ouverture (base de customLogo)
 let wizardCustomOriginal = false; // drapeau customLogo à l'ouverture (édition)
 let currentUrl = ''; // URL courante de la vue active
@@ -369,6 +370,7 @@ function openWizard() {
 function openEdit(svc) {
   wizardMode = 'edit';
   editServiceId = svc.id;
+  editService = svc;
   analysis = { url: svc.url };
   setEditFieldsVisible(true);
   $('#wizard-title').textContent = t('wizardTitleEdit');
@@ -1114,6 +1116,31 @@ $('#wizard-back').addEventListener('click', () => {
   $('#wizard-step-url').classList.remove('hidden');
 });
 $('#wizard-save').addEventListener('click', saveService);
+
+// Multi-comptes : duplique le service édité — nouvelle entrée de registre,
+// nouvel id, donc une NOUVELLE partition persist:<id> : connexion
+// totalement indépendante (Le Chat perso + pro par exemple).
+$('#wizard-duplicate').addEventListener('click', async () => {
+  if (!editService) return;
+  // Suffixe « (n) » : « (2) » pour la première copie, (3), (4)… ensuite.
+  const base = editService.name.replace(/ \(\d+\)$/, '');
+  const n = services.filter((s) => s.url === editService.url).length + 1;
+  closeWizard();
+  const dup = await api.addService({
+    name: `${base} (${n})`,
+    url: editService.url,
+    accent: editService.accent,
+    accent2: editService.accent2,
+    logo: editService.logo,
+    customLogo: editService.customLogo,
+    excludeRegex: editService.excludeRegex,
+    blockNavRegex: editService.blockNavRegex,
+    stripTitleRegex: editService.stripTitleRegex,
+    rootChat: editService.rootChat,
+    genericTitleRegex: editService.genericTitleRegex,
+  });
+  toast(t('duplicatedToast', { name: dup.name }));
+});
 $('#wizard-overlay').addEventListener('click', (e) => {
   if (e.target === $('#wizard-overlay')) closeWizard();
 });

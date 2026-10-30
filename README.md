@@ -66,6 +66,7 @@ Binaires prêts à installer sur la [release 0.1.0](https://github.com/Invenify/
 | **Écran partagé (desktop)** | Deux IA côte à côte (Ctrl/Cmd+E, puis Ctrl/clic sur un service pour la moitié droite) : comparez les réponses sans basculer. |
 | **Sidebar (desktop)** | Réductible à un rail d'icônes (Ctrl/Cmd+B, état mémorisé), thème clair/sombre suivant l'OS. |
 | **Finitions** | Édition d'un service (nom, couleurs, logo, URL, exclusions), suppression avec session conservable ou déconnectée, barre d'adresse, export/import du registre en JSON (fusion par URL). |
+| **Multi-comptes** | Dupliquez un service (✎ → « Dupliquer ») : connexion totalement indépendante (Le Chat perso + pro). |
 | **Réglages & langues** | Menu Réglages (⚙ ou `Ctrl/Cmd+,`) : thème, **langue de l'interface** (français, anglais, allemand, espagnol, italien — suit la langue du système par défaut), gestion des services, export/import du registre. Desktop et mobile. |
 | **Palette universelle** | `Ctrl/Cmd+Tab` : cherchez une conversation parmi tous les services (ou un service par son nom) et y aller d'une touche — plus besoin de se souvenir de « sur quel site » vit un chat. |
 | **Raccourcis** | `Ctrl/Cmd+1…9` basculer de service, `Ctrl/Cmd+K` chercher, `Ctrl/Cmd+P` relais/battle, `Ctrl/Cmd+B` réduire la sidebar, `Ctrl/Cmd+E` écran partagé, `Ctrl/Cmd+Tab` palette universelle, `Ctrl/Cmd+,` réglages. |
