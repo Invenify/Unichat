@@ -970,6 +970,91 @@ function updateSplitButton() {
 
 $('#split-toggle').addEventListener('click', () => setSplit(splitServiceId === null ? undefined : null));
 
+// --- Sélecteur d'espace (chip de la sidebar) : bascule rapide ---
+
+// Le chip n'existe que s'il y a au moins un espace à choisir.
+function updateWorkspaceChip() {
+  const chip = $('#workspace-switch');
+  chip.classList.toggle('hidden', workspaces.list.length === 0);
+  const name =
+    workspaces.active === 'all'
+      ? t('allServices')
+      : (workspaces.list.find((w) => w.id === workspaces.active) || {}).name || t('allServices');
+  $('#workspace-chip-name').textContent = name;
+  chip.title = `${t('workspacesSection')} : ${name}`;
+}
+
+let wsMenu = null;
+
+function closeWorkspaceMenu() {
+  if (wsMenu) {
+    wsMenu.remove();
+    wsMenu = null;
+  }
+}
+
+async function activateWorkspace(id) {
+  workspaces = await api.workspacesActivate(id);
+  render();
+  updateWorkspaceChip();
+  updateSettingsRows();
+}
+
+// Menu de bascule rapide (même patron que le menu des conversations) :
+// « Tous les services », un bouton par espace, puis « Gérer… ».
+function openWorkspaceMenu() {
+  closeWorkspaceMenu();
+  wsMenu = document.createElement('div');
+  wsMenu.className = 'entry-menu ws-menu';
+
+  const addItem = (label, active, action, danger) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    if (active) btn.classList.add('active');
+    if (danger) btn.classList.add('danger');
+    btn.addEventListener('click', async () => {
+      closeWorkspaceMenu();
+      await action();
+    });
+    wsMenu.appendChild(btn);
+  };
+
+  addItem(t('allServices'), workspaces.active === 'all', () => activateWorkspace('all'));
+  for (const ws of workspaces.list) {
+    addItem(ws.name, workspaces.active === ws.id, () => activateWorkspace(ws.id));
+  }
+  addItem(t('manageWorkspaces'), false, () => openSettings());
+
+  document.body.appendChild(wsMenu);
+  // Ancré sous le chip, clampé dans la sidebar (jamais sous les vues).
+  const chipRect = $('#workspace-switch').getBoundingClientRect();
+  const rect = wsMenu.getBoundingClientRect();
+  wsMenu.style.left = Math.max(4, Math.min(chipRect.left, window.innerWidth - rect.width - 6)) + 'px';
+  wsMenu.style.top = Math.min(chipRect.bottom + 6, window.innerHeight - rect.height - 6) + 'px';
+}
+
+$('#workspace-switch').addEventListener('click', (ev) => {
+  ev.stopPropagation();
+  if (wsMenu) closeWorkspaceMenu();
+  else openWorkspaceMenu();
+});
+document.addEventListener('click', (e) => {
+  if (wsMenu && !wsMenu.contains(e.target)) closeWorkspaceMenu();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeWorkspaceMenu();
+});
+window.addEventListener('blur', closeWorkspaceMenu);
+
+// Applique un nouvel état des espaces partout : sidebar, Réglages, chip.
+function applyWorkspaceState(state) {
+  workspaces = state;
+  render();
+  renderWorkspaces();
+  updateSettingsRows();
+  updateWorkspaceChip();
+}
+
 // --- Réglages : thème, langue, services, registre (bouton ⚙ du footer) ---
 
 let languageSetting = 'system';
@@ -1082,10 +1167,7 @@ function renderWorkspaces() {
     name.textContent = ws.name;
     name.title = ws.name;
     name.addEventListener('click', async () => {
-      workspaces = await api.workspacesActivate(ws.id);
-      render();
-      renderWorkspaces();
-      updateSettingsRows();
+      applyWorkspaceState(await api.workspacesActivate(ws.id));
     });
     row.appendChild(name);
 
@@ -1094,10 +1176,7 @@ function renderWorkspaces() {
     del.textContent = '×';
     del.title = t('deleteWorkspace');
     del.addEventListener('click', async () => {
-      workspaces = await api.workspacesDelete(ws.id);
-      render();
-      renderWorkspaces();
-      updateSettingsRows();
+      applyWorkspaceState(await api.workspacesDelete(ws.id));
     });
     row.appendChild(del);
     wrap.appendChild(row);
@@ -1120,10 +1199,7 @@ $('#workspace-new').addEventListener('click', () => {
     done = true;
     const value = input.value.trim();
     if (create && value) {
-      workspaces = await api.workspacesCreate(value);
-      render();
-      renderWorkspaces();
-      updateSettingsRows();
+      applyWorkspaceState(await api.workspacesCreate(value));
       toast(t('workspaceCreated'));
     } else {
       input.replaceWith(btn);
@@ -1139,10 +1215,7 @@ $('#workspace-new').addEventListener('click', () => {
 
 // « Tous les services » : retour à l'espace implicite.
 $('#workspace-row [data-ws="all"]').addEventListener('click', async () => {
-  workspaces = await api.workspacesActivate('all');
-  render();
-  renderWorkspaces();
-  updateSettingsRows();
+  applyWorkspaceState(await api.workspacesActivate('all'));
 });
 
 // --- Palette universelle : une recherche, tous les services ---
@@ -1501,6 +1574,7 @@ api.onActiveUrlChanged((url) => {
   hibernateMinutes = (await api.getHibernateMinutes()) || 0;
   workspaces = (await api.getWorkspaces()) || { active: 'all', list: [] };
   updateSettingsRows(); // marqueurs des Réglages corrects avant la 1re ouverture
+  updateWorkspaceChip(); // chip de la sidebar (cachée sans espace)
   // Textes statiques traduits + <html lang> avant le premier rendu.
   applyI18n();
   updateRelayButton();

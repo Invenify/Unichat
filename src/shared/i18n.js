@@ -148,6 +148,7 @@ const DICT = {
     workspaceNamePh: "Nom de l'espace…",
     deleteWorkspace: "Supprimer cet espace",
     workspaceCreated: "Espace créé et activé.",
+    manageWorkspaces: "Gérer les espaces…",
   },
 
   en: {
@@ -295,6 +296,7 @@ const DICT = {
     workspaceNamePh: "Workspace name…",
     deleteWorkspace: "Delete this workspace",
     workspaceCreated: "Workspace created and activated.",
+    manageWorkspaces: "Manage workspaces…",
   },
 
   de: {
@@ -442,6 +444,7 @@ const DICT = {
     workspaceNamePh: "Name des Arbeitsbereichs…",
     deleteWorkspace: "Diesen Arbeitsbereich löschen",
     workspaceCreated: "Arbeitsbereich erstellt und aktiviert.",
+    manageWorkspaces: "Arbeitsbereiche verwalten…",
   },
 
   es: {
@@ -589,6 +592,7 @@ const DICT = {
     workspaceNamePh: "Nombre del espacio…",
     deleteWorkspace: "Eliminar este espacio",
     workspaceCreated: "Espacio creado y activado.",
+    manageWorkspaces: "Gestionar espacios…",
   },
 
   it: {
@@ -736,6 +740,7 @@ const DICT = {
     workspaceNamePh: "Nome dell'area…",
     deleteWorkspace: "Elimina quest'area",
     workspaceCreated: "Area creata e attivata.",
+    manageWorkspaces: "Gestisci le aree…",
   },
 };
 
