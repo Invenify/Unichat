@@ -89,6 +89,28 @@ export const webviews = {
     if (p) p.destroy({ id }).catch(onError);
   },
 
+  // Presse-papiers du système (relais / battle d'IA) : le prompt saisi dans
+  // UniChat part vers l'IA affichée, jamais l'inverse. Sans plugin :
+  // Clipboard API du navigateur si disponible.
+  async copyText(text) {
+    const value = String(text || '');
+    const p = plugin();
+    if (p) {
+      try {
+        await p.copyText({ text: value });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   // events "page" { id, url, title } — titre/URL de la vue → historique.
   onPage(cb) {
     return subscribe('page', cb);

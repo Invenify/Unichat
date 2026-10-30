@@ -22,6 +22,9 @@ const { window } = dom;
 
 (async () => {
   // Le bundle www/app.js est auto-suffisant (esbuild, plus d'import).
+  // Langue forcée en français : sans elle, jsdom annonce « en-US » et
+  // l'interface se chargerait en anglais.
+  window.localStorage.setItem('unichat.lang', 'fr');
   window.window.eval(fs.readFileSync(path.join(WWW, 'app.js'), 'utf8'));
   // Laisse tourner les promesses de démarrage.
   await new Promise((r) => setTimeout(r, 50));
@@ -33,7 +36,7 @@ const { window } = dom;
   // Démarrage : écran Chats actif, onboarding (catalogue) ouvert
   check('écran Chats actif', $('#screen-chats').classList.contains('active'));
   check('onboarding : catalogue ouvert', visible('#sheet-catalog'));
-  check('catalogue : 19 entrées', doc.querySelectorAll('.cat-entry').length === 19);
+  check('catalogue : 20 entrées', doc.querySelectorAll('.cat-entry').length === 20);
 
   // Activer Le Chat puis fermer : il apparaît dans Services
   const lechat = [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes('Le Chat'));
@@ -113,6 +116,49 @@ const { window } = dom;
   await new Promise((r) => setTimeout(r, 20));
   check('service supprimé et déconnecté sans erreur', JSON.parse(window.localStorage.getItem('unichat.services')).length === 0);
   check('historique du service purgé', JSON.parse(window.localStorage.getItem('unichat.history')).length === 0);
+
+  // Battle d'IA : activer 2 services, prompt mémorisé (bibliothèque),
+  // relais 1/2 → 2/2 → terminé. Sans plugin natif : placeholder + toast
+  // « copie impossible », le flux ne lève pas.
+  $('#open-catalog').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  for (const name of ['Le Chat', 'Lumo']) {
+    [...doc.querySelectorAll('.cat-entry')].find((e) => e.textContent.includes(name))
+      .dispatchEvent(new window.Event('click', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  $('#catalog-done').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('deux services actifs pour le battle', JSON.parse(window.localStorage.getItem('unichat.services')).length === 2);
+
+  window.localStorage.setItem('unichat.relay.prompts', JSON.stringify(['Rédige un haïku sur le vin']));
+  $('.nav-btn[data-screen="chats"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  $('#battle-open').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('sheet battle ouvert', visible('#sheet-battle'));
+  check('les 2 IA sont présélectionnées', doc.querySelectorAll('.battle-svc.selected').length === 2);
+  check('bibliothèque de prompts rendue', doc.querySelector('.prompt-chip .chip-label').textContent.includes('haïku'));
+  doc.querySelector('.prompt-chip').dispatchEvent(new window.Event('click', { bubbles: true }));
+  check('clic sur un prompt mémorisé remplit le champ', $('#battle-text').value.includes('haïku'));
+  check('bouton battle libellé « 2 IA »', $('#battle-start').textContent.includes('2 IA'));
+
+  $('#battle-start').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 80)); // rAF du câblage de la vue
+  check('battle : première IA ouverte', visible('#webview-holder') && $('#webview-title').textContent === 'Le Chat');
+  check('battle : bouton suivante visible', visible('#battle-next') && $('#battle-next').textContent.includes('1/2'));
+  check('battle : prompt mémorisé', window.localStorage.getItem('unichat.relay.prompt').includes('haïku'));
+
+  $('#battle-next').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 80));
+  check('battle : deuxième IA ouverte', $('#webview-title').textContent === 'Lumo');
+  check('battle : dernier bouton = Terminer', $('#battle-next').textContent.includes('Terminer'));
+
+  $('#battle-next').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('battle terminé : bouton caché', !visible('#battle-next'));
+  check('battle terminé : toast affiché', $('#toast').textContent.includes('Battle terminé'));
+  $('#webview-back').dispatchEvent(new window.Event('click', { bubbles: true }));
+  check('vue fermée après le battle', !visible('#webview-holder'));
 
   console.log(failures === 0 ? 'ALL DOM TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);

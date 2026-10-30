@@ -4,11 +4,11 @@
 // Les règles métier (isChatUrl, cleanTitle, fusion d'import) viennent de
 // src/shared/ — exactement les mêmes que le desktop.
 
-import { isChatUrl, cleanTitle } from '../src/shared/title-rules.js';
+import { isChatUrl, cleanTitle, resolveTitle } from '../src/shared/title-rules.js';
 import { mkService, importable } from '../src/shared/service.js';
 import { list as catalogList, find as catalogFind, sameOrigin } from '../src/shared/catalog.js';
 
-const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme' };
+const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang' };
 
 function read(key, fallback) {
   try {
@@ -94,14 +94,15 @@ export const api = {
 
   // Enregistre une navigation : les mêmes règles que le desktop
   // (https, même hôte, pas de login, pas la racine, pas d'exclusion,
-  // stripTitleRegex appliqué).
+  // stripTitleRegex puis filtre générique, repli rootChat).
   async recordNavigation(service, url, title) {
     if (!url || !title) return null;
     if (!isChatUrl(service, url)) return null;
+    const clean = resolveTitle(service, url, title);
+    if (!clean) return null;
     const history = read(K.history, []);
     const key = normUrl(url);
     let entry = history.find((e) => e.serviceId === service.id && e.url === key);
-    const clean = cleanTitle(service, title);
     if (entry) {
       if (!entry.manual) entry.title = clean;
       entry.timestamp = Date.now();
@@ -153,6 +154,20 @@ export const api = {
     if (theme === 'system' || theme === 'light' || theme === 'dark') {
       localStorage.setItem(K.theme, theme);
       return theme;
+    }
+    return null;
+  },
+
+  // Langue de l'interface ('system' suit la langue de l'appareil).
+  async getLang() {
+    const l = localStorage.getItem(K.lang);
+    return l === 'fr' || l === 'en' || l === 'de' || l === 'es' || l === 'it' ? l : 'system';
+  },
+
+  async setLang(lang) {
+    if (lang === 'system' || lang === 'fr' || lang === 'en' || lang === 'de' || lang === 'es' || lang === 'it') {
+      localStorage.setItem(K.lang, lang);
+      return lang;
     }
     return null;
   },

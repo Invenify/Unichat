@@ -4,6 +4,22 @@
 
 import { api, catalogList, sameOrigin } from './api.js';
 import { webviews } from './webviews.js';
+import { t, setLang as setI18nLang, resolveLang, locale as i18nLocale, LANGS } from '../src/shared/i18n.js';
+
+// Applique la langue courante aux textes statiques du DOM (data-i18n,
+// data-i18n-placeholder, data-i18n-title) et à <html lang>.
+function applyI18n() {
+  document.documentElement.lang = i18nLocale().slice(0, 2);
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+}
 
 const $ = (sel) => document.querySelector(sel);
 const SVG = {
@@ -119,7 +135,7 @@ function chatGroups(query) {
 function fmtDate(ts) {
   const d = new Date(ts);
   const today = new Date().toDateString() === d.toDateString();
-  return today ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return today ? d.toLocaleTimeString(i18nLocale(), { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(i18nLocale(), { day: 'numeric', month: 'short' });
 }
 
 // Ligne de conversation (écran Chats et modale « toutes les conversations »)
@@ -157,7 +173,7 @@ function renderChats() {
   list.innerHTML = '';
   if (groups.size === 0) {
     list.innerHTML = `<p class="empty-hint">${history.length === 0
-      ? 'Aucune conversation pour le moment.<br>Ouvrez un service, les chats visités apparaissent ici.'
+      ? t('mobileEmptyHistory')
       : 'Aucun résultat pour cette recherche.'}</p>`;
     return;
   }
@@ -180,7 +196,7 @@ function renderChats() {
     if (!searching && rest.length > CHATS_PER_SERVICE) {
       const more = document.createElement('button');
       more.className = 'chat-more';
-      more.innerHTML = `<span>Voir les ${rest.length - CHATS_PER_SERVICE} autres</span>${SVG.chevron}`;
+      more.innerHTML = `<span>${t('mobileSeeMore', { n: rest.length - CHATS_PER_SERVICE })}</span>${SVG.chevron}`;
       more.addEventListener('click', () => openServiceChats(svc));
       group.appendChild(more);
     }
@@ -194,7 +210,7 @@ function openServiceChats(svc) {
   const entries = serviceEntries(svc, '');
   $('#sheet-chats-title').textContent = svc.name;
   $('#sheet-chats-count').textContent =
-    entries.length + (entries.length > 1 ? ' conversations' : ' conversation');
+    entries.length + ' ' + t(entries.length > 1 ? 'mobileConversations' : 'mobileConversation');
   const body = $('#sheet-chats-body');
   body.innerHTML = '';
   for (const e of entries) {
@@ -219,14 +235,14 @@ function chatMenu(svc, entry, opts = {}) {
     if (opts.refresh) opts.refresh();
   };
   const items = [
-    { label: 'Ouvrir', action: () => openWebView(svc, entry.url) },
-    { label: entry.pinned ? 'Détacher' : 'Épingler', action: () =>
+    { label: t('mobileOpen'), action: () => openWebView(svc, entry.url) },
+    { label: entry.pinned ? t('entryUnpin') : t('entryPin'), action: () =>
       done(() => api.setPinned(svc.id, entry.url, !entry.pinned)) },
   ];
   if (!opts.fromSheet) {
-    items.push({ label: 'Renommer', action: () => startRename(svc, entry) });
+    items.push({ label: t('entryRename'), action: () => startRename(svc, entry) });
   }
-  items.push({ label: 'Retirer de l\u2019historique', danger: true, action: () =>
+  items.push({ label: t('mobileRemoveHistory'), danger: true, action: () =>
     done(() => api.removeEntry(svc.id, entry.url)) });
   openMenu(entry.title, items);
 }
@@ -273,7 +289,7 @@ function renderDock() {
     btn.className = 'dock-btn';
     btn.dataset.svcId = svc.id;
     btn.title = svc.name;
-    btn.setAttribute('aria-label', 'Ouvrir ' + svc.name);
+    btn.setAttribute('aria-label', t('mobileOpen') + ' ' + svc.name);
     btn.innerHTML = logoHtml(svc, 'dock-fallback');
     btn.addEventListener('click', () => openWebView(svc, svc.url));
     dock.appendChild(btn);
@@ -375,7 +391,7 @@ function renderDock() {
       renderDock();
       renderChats();
       renderServices();
-      toast('Ordre des services mis à jour.');
+      toast(t('mobileOrderToast'));
     } else {
       renderDock(); // transform remis à zéro
     }
@@ -399,7 +415,7 @@ function renderServices() {
   const list = $('#service-list');
   list.innerHTML = '';
   if (services.length === 0) {
-    list.innerHTML = '<p class="empty-hint">Aucun service.<br>Ajoutez-en un par URL ou via le catalogue.</p>';
+    list.innerHTML = `<p class="empty-hint">${t('mobileEmptyServices')}</p>`;
     return;
   }
   for (const svc of services) {
@@ -430,16 +446,16 @@ function domainOf(url) {
 
 function serviceMenu(svc) {
   openMenu(svc.name, [
-    { label: 'Ouvrir', action: () => openWebView(svc, svc.url) },
-    { label: svc.enabled ? 'Désactiver (session conservée)' : 'Activer', action: async () => {
+    { label: t('mobileOpen'), action: () => openWebView(svc, svc.url) },
+    { label: svc.enabled ? t('mobileDisable') : t('mobileEnable'), action: async () => {
       await api.updateService(svc.id, { enabled: !svc.enabled });
       await reload();
     } },
-    { label: 'Supprimer…', danger: true, action: () =>
+    { label: t('mobileDelete'), danger: true, action: () =>
       openMenu(svc.name, [
-        { label: 'Supprimer et déconnecter', danger: true, action: () => removeService(svc, true) },
-        { label: 'Supprimer en gardant la session', action: () => removeService(svc, false) },
-        { label: 'Annuler', action: () => {} },
+        { label: t('removeDeleteSession'), danger: true, action: () => removeService(svc, true) },
+        { label: t('mobileDeleteKeepSession'), action: () => removeService(svc, false) },
+        { label: t('cancel'), action: () => {} },
       ]) },
   ]);
 }
@@ -449,7 +465,7 @@ async function removeService(svc, dropSession) {
   await webviews.destroy(svc.id); // la WebView éventuelle du service
   await api.removeService(svc.id);
   await api.removeServiceHistory(svc.id);
-  toast(`« ${svc.name} » supprimé${dropSession ? ' et déconnecté' : ' (session conservée)'}.`);
+  toast(t(dropSession ? 'mobileDeletedDC' : 'mobileDeletedKeep', { name: svc.name }));
   await reload();
 }
 
@@ -475,7 +491,7 @@ function renderCatalog() {
 async function toggleCatalogEntry(entry, svc) {
   if (!svc) {
     await api.addService({ ...entry, enabled: true });
-    toast(`« ${entry.name} » ajouté.`);
+    toast(t('mobileAddedToast', { name: entry.name }));
   } else {
     await api.updateService(svc.id, { enabled: !svc.enabled });
   }
@@ -488,12 +504,12 @@ async function toggleCatalogEntry(entry, svc) {
 let wizardDraft = null;
 
 function openWizard() {
-  $('#wizard-title').textContent = 'Ajouter un service';
+  $('#wizard-title').textContent = t('wizardTitleAdd');
   $('#wizard-step-url').classList.remove('hidden');
   $('#wizard-step-confirm').classList.add('hidden');
   $('#wizard-error').classList.add('hidden');
   $('#svc-url').value = '';
-  $('#wizard-next').textContent = 'Analyser';
+  $('#wizard-next').textContent = t('wizardAnalyze');
   openSheet('#sheet-wizard');
 }
 
@@ -504,7 +520,7 @@ $('#wizard-next').addEventListener('click', async () => {
     try {
       wizardDraft = await api.analyzeUrl($('#svc-url').value);
     } catch {
-      err.textContent = 'URL invalide — exemple : chat.example.com';
+      err.textContent = t('wizardUrlInvalid');
       err.classList.remove('hidden');
       return;
     }
@@ -515,7 +531,7 @@ $('#wizard-next').addEventListener('click', async () => {
     $('#svc-name-preview').textContent = wizardDraft.name;
     $('#wizard-step-url').classList.add('hidden');
     $('#wizard-step-confirm').classList.remove('hidden');
-    $('#wizard-next').textContent = 'Ajouter le service';
+    $('#wizard-next').textContent = t('wizardSaveAdd');
     return;
   }
   const svc = await api.addService({
@@ -526,7 +542,7 @@ $('#wizard-next').addEventListener('click', async () => {
     logo: wizardDraft.logo,
   });
   closeSheets();
-  toast(`« ${svc.name} » ajouté.`);
+  toast(t('mobileAddedToast', { name: svc.name }));
   await reload();
 });
 
@@ -556,7 +572,7 @@ function openWebView(svc, url) {
   if (src) { img.src = src; img.classList.remove('hidden'); } else img.classList.add('hidden');
   $('#webview-slot').innerHTML = webviews.available()
     ? ''
-    : `<span>Vue « ${escapeHtml(svc.name)} » — ${escapeHtml(url)}<br><br>La WebView native est disponible sur l'app Android uniquement.</span>`;
+    : `<span>${escapeHtml(svc.name)} — ${escapeHtml(url)}<br><br>${t('mobileWebViewNote')}</span>`;
   $('#webview-holder').classList.remove('hidden');
   wvOpen = true;
   // Le holder vient d'être affiché : mesurer le slot puis ouvrir la vue.
@@ -596,6 +612,130 @@ webviews.onClosed(() => {
   if (wvOpen) closeWebView();
 });
 
+// --- Battle d'IA : prompt saisi dans UniChat, copié vers le presse-papiers
+// de chaque IA choisie, une par une. « Suivante » dans la barre de la vue
+// copie et bascule ; un service sélectionné = relais simple. Zéro sélecteur
+// de site : le prompt n'est jamais lu depuis les pages.
+
+const RELAY_KEY = 'unichat.relay.prompt';
+const PROMPTS_KEY = 'unichat.relay.prompts';
+let battleSel = new Set(); // ids des IA participantes
+let battle = null; // { services: [svc…], idx, prompt }
+
+function savedPrompts() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PROMPTS_KEY));
+    return Array.isArray(v) ? v.filter((p) => typeof p === 'string' && p) : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderBattleChips() {
+  const wrap = $('#battle-prompt-chips');
+  wrap.innerHTML = '';
+  for (const text of savedPrompts()) {
+    const chip = document.createElement('button');
+    chip.className = 'prompt-chip';
+    chip.type = 'button';
+    chip.innerHTML = `<span class="chip-label">${escapeHtml(text.length > 36 ? text.slice(0, 36) + '…' : text)}</span><span class="chip-x">×</span>`;
+    chip.querySelector('.chip-x').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      localStorage.setItem(PROMPTS_KEY, JSON.stringify(savedPrompts().filter((p) => p !== text)));
+      renderBattleChips();
+    });
+    chip.addEventListener('click', () => {
+      $('#battle-text').value = text;
+      localStorage.setItem(RELAY_KEY, text);
+    });
+    wrap.appendChild(chip);
+  }
+}
+
+function renderBattleServices() {
+  const listEl = $('#battle-svc-list');
+  listEl.innerHTML = '';
+  for (const svc of services.filter((s) => s.enabled)) {
+    const on = battleSel.has(svc.id);
+    const btn = document.createElement('button');
+    btn.className = 'cat-entry battle-svc' + (on ? ' selected' : '');
+    btn.innerHTML = `
+      ${logoHtml(svc, 'cat-fallback')}
+      <span class="cat-name">${escapeHtml(svc.name)}</span>
+      <span class="cat-check">${on ? SVG.check : ''}</span>`;
+    btn.addEventListener('click', () => {
+      if (battleSel.has(svc.id)) battleSel.delete(svc.id);
+      else battleSel.add(svc.id);
+      renderBattleServices();
+    });
+    listEl.appendChild(btn);
+  }
+  const n = battleSel.size;
+  const btn = $('#battle-start');
+  btn.textContent = n <= 1 ? t('relayRelay') : t('relayBattle', { n });
+  btn.disabled = n === 0;
+}
+
+function openBattleSheet() {
+  $('#battle-text').value = localStorage.getItem(RELAY_KEY) || '';
+  battleSel = new Set(services.filter((s) => s.enabled).map((s) => s.id));
+  renderBattleChips();
+  renderBattleServices();
+  openSheet('#sheet-battle');
+}
+
+function saveBattlePrompt() {
+  const text = $('#battle-text').value.trim();
+  if (!text) return;
+  localStorage.setItem(PROMPTS_KEY, JSON.stringify([text, ...savedPrompts().filter((p) => p !== text)].slice(0, 12)));
+  renderBattleChips();
+  toast(t('promptSaved'));
+}
+
+async function battleStep() {
+  const svc = battle.services[battle.idx];
+  const copied = await webviews.copyText(battle.prompt);
+  const next = $('#battle-next');
+  const last = battle.idx === battle.services.length - 1;
+  next.textContent = last ? t('mobileBattleFinish') : t('mobileBattleNext', { i: battle.idx + 1, n: battle.services.length });
+  next.classList.remove('hidden');
+  openWebView(svc, svc.url);
+  toast(copied
+    ? t('mobileBattleCopied', { name: svc.name })
+    : t('mobileBattleCopyFail', { name: svc.name }));
+}
+
+async function battleStart() {
+  const text = $('#battle-text').value.trim();
+  if (!text) {
+    $('#battle-text').focus();
+    return;
+  }
+  const list = services.filter((s) => s.enabled && battleSel.has(s.id));
+  if (list.length === 0) return;
+  localStorage.setItem(RELAY_KEY, text);
+  battle = { services: list, idx: 0, prompt: text };
+  closeSheets();
+  await battleStep();
+}
+
+async function battleNext() {
+  if (!battle) return;
+  if (battle.idx >= battle.services.length - 1) {
+    battle = null;
+    $('#battle-next').classList.add('hidden');
+    toast(t('battleDoneToast'));
+    return;
+  }
+  battle.idx += 1;
+  await battleStep();
+}
+
+$('#battle-open').addEventListener('click', () => { closeSheets(); openBattleSheet(); });
+$('#battle-prompt-save').addEventListener('click', saveBattlePrompt);
+$('#battle-start').addEventListener('click', battleStart);
+$('#battle-next').addEventListener('click', battleNext);
+
 // --- Réglages : thème, export, import ---
 
 async function applyTheme(theme) {
@@ -612,14 +752,23 @@ document.querySelectorAll('.theme-opt').forEach((btn) =>
   })
 );
 
+// Langue de l'interface : le rechargement retraduit tout d'un coup
+// (statique et dynamique) — un changement de langue est rare.
+document.querySelectorAll('#lang-row .lang-opt').forEach((btn) =>
+  btn.addEventListener('click', async () => {
+    const applied = await api.setLang(btn.dataset.lang);
+    if (applied) window.location.reload();
+  })
+);
+
 $('#export-registry').addEventListener('click', async () => {
   const json = JSON.stringify(services, null, 2);
   // Phase 4 : share sheet Android. En attendant : presse-papiers.
   try {
     await navigator.clipboard.writeText(json);
-    toast('Registre copié dans le presse-papiers (' + services.length + ' services).');
+    toast(t('mobileRegistryCopied', { n: services.length }));
   } catch {
-    toast(services.length + ' services à exporter — partage Android en phase 4.');
+    toast(t('mobileRegistryShareHint', { n: services.length }));
   }
 });
 
@@ -632,10 +781,10 @@ $('#import-file').addEventListener('change', async (ev) => {
   try {
     const list = JSON.parse(await file.text());
     const added = await api.importRegistry(list);
-    toast(added > 0 ? `${added} service(s) importé(s).` : 'Rien de nouveau à importer.');
+    toast(added > 0 ? t('registryImportAdded', { n: added }) : t('mobileImportNone'));
     await reload();
   } catch {
-    toast('Fichier JSON invalide.');
+    toast(t('mobileImportInvalid'));
   }
 });
 
@@ -662,6 +811,13 @@ function escapeHtml(s) {
 // --- Démarrage ---
 
 (async () => {
+  // i18n : langue résolue AVANT tout rendu (catalogue, onboarding inclus).
+  const langSetting = await api.getLang();
+  setI18nLang(resolveLang(langSetting, navigator.language));
+  applyI18n();
+  document.querySelectorAll('#lang-row .lang-opt').forEach((b) => {
+    b.classList.toggle('on', b.dataset.lang === langSetting);
+  });
   await applyTheme(await api.getTheme());
   await reload();
   showScreen('chats');

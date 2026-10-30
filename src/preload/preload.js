@@ -1,8 +1,21 @@
 // preload.js — pont IPC minimal entre le renderer et le process principal.
 
 const { contextBridge, ipcRenderer } = require('electron');
+const i18n = require('../shared/i18n');
+
+// Langue résolue DÈS le chargement du preload : api.t() traduit dans la
+// bonne langue au premier rendu du renderer (qui n'est pas bundlé et ne
+// peut pas require() le dictionnaire lui-même).
+i18n.setLang(i18n.resolveLang(ipcRenderer.sendSync('get-language-sync'), navigator.language));
 
 contextBridge.exposeInMainWorld('unichat', {
+  // i18n : le dictionnaire vit dans src/shared (même code que le mobile),
+  // la traduction est appelée ici, dans le contexte du preload.
+  t: (key, vars) => i18n.t(key, vars),
+  i18nLangs: i18n.LANGS,
+  i18nLocale: () => i18n.locale(),
+  getLanguage: () => ipcRenderer.invoke('get-language'),
+  setLanguage: (language) => ipcRenderer.invoke('set-language', language),
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),
@@ -11,12 +24,18 @@ contextBridge.exposeInMainWorld('unichat', {
   analyzeUrl: (url) => ipcRenderer.invoke('analyze-url', url),
   getTheme: () => ipcRenderer.invoke('get-theme'),
   setTheme: (theme) => ipcRenderer.invoke('set-theme', theme),
+  getSidebarCollapsed: () => ipcRenderer.invoke('get-sidebar-collapsed'),
+  setSidebarCollapsed: (collapsed) => ipcRenderer.invoke('set-sidebar-collapsed', collapsed),
   getCatalog: () => ipcRenderer.invoke('get-catalog'),
   setServiceEnabled: (url, enabled) => ipcRenderer.invoke('set-service-enabled', url, enabled),
   addService: (data) => ipcRenderer.invoke('add-service', data),
   updateService: (id, patch) => ipcRenderer.invoke('update-service', id, patch),
   importLogo: () => ipcRenderer.invoke('import-logo'),
   relayCopy: (text) => ipcRenderer.invoke('relay-copy', text),
+  relayPaste: (serviceId) => ipcRenderer.invoke('relay-paste', serviceId),
+  relaySend: (serviceId) => ipcRenderer.invoke('relay-send', serviceId),
+  armBattleAdvance: (serviceId) => ipcRenderer.invoke('arm-battle-advance', serviceId),
+  setSplit: (serviceId) => ipcRenderer.invoke('set-split', serviceId),
   removeService: (id, keepSession) => ipcRenderer.invoke('remove-service', id, keepSession),
   showService: (id) => ipcRenderer.invoke('show-service', id),
   setModalOpen: (open) => ipcRenderer.invoke('set-modal-open', open),
@@ -44,5 +63,10 @@ contextBridge.exposeInMainWorld('unichat', {
     const listener = (_e, url) => cb(url);
     ipcRenderer.on('active-url-changed', listener);
     return () => ipcRenderer.removeListener('active-url-changed', listener);
+  },
+  onBattleAdvance: (cb) => {
+    const listener = (_e, serviceId) => cb(serviceId);
+    ipcRenderer.on('battle-advance', listener);
+    return () => ipcRenderer.removeListener('battle-advance', listener);
   },
 });

@@ -13,10 +13,17 @@ const settings = require('./settings');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 
-const SIDEBAR_WIDTH = 310;
+// Sidebar : largeur normale, ou rail d'icônes quand elle est réduite
+// (bouton « ⟨ ⟩ » ou Ctrl/Cmd+B, état persisté dans settings.json).
+const SIDEBAR_WIDE = 310;
+const SIDEBAR_RAIL = 64;
+function sidebarWidth() {
+  return settings.get().sidebarCollapsed === true ? SIDEBAR_RAIL : SIDEBAR_WIDE;
+}
 let mainWindow = null;
 const views = new Map(); // serviceId -> WebContentsView
 let activeServiceId = null;
+let splitServiceId = null; // 2e moitié de l'écran partagé (serviceId)
 let modalOpen = false; // modal renderer ouverte → vues masquées (elles couvrent la fenêtre)
 
 // Systray : fermer la fenêtre la cache (l'app tourne en arrière-plan),
@@ -37,10 +44,21 @@ protocol.registerSchemesAsPrivileged([
 function layoutViews() {
   if (!mainWindow) return;
   const [w, h] = mainWindow.getContentSize();
-  const bounds = { x: SIDEBAR_WIDTH, y: 0, width: Math.max(0, w - SIDEBAR_WIDTH), height: h };
+  const x0 = sidebarWidth();
+  const avail = Math.max(0, w - x0);
+  // Écran partagé : le service secondaire occupe la moitié droite, le
+  // service actif la moitié gauche. Sans secondaire : pleine largeur.
+  const splitOn =
+    splitServiceId !== null && views.has(splitServiceId) && splitServiceId !== activeServiceId;
+  const half = Math.floor(avail / 2);
   for (const [id, view] of views) {
-    view.setBounds(bounds);
-    view.setVisible(!modalOpen && id === activeServiceId);
+    if (splitOn && id === splitServiceId) {
+      view.setBounds({ x: x0 + half, y: 0, width: avail - half, height: h });
+      view.setVisible(!modalOpen);
+    } else {
+      view.setBounds({ x: x0, y: 0, width: splitOn ? half : avail, height: h });
+      view.setVisible(!modalOpen && id === activeServiceId);
+    }
   }
 }
 
@@ -101,10 +119,12 @@ function createServiceView(service) {
     }
   }
 
-  view.webContents.on('did-navigate', () => {
+  view.webContents.on('did-navigate', (_e, url) => {
+    notifyBattleAdvance(service.id);
     if (service.id === activeServiceId) pushActiveUrl();
   });
-  view.webContents.on('did-navigate-in-page', () => {
+  view.webContents.on('did-navigate-in-page', (_e, url, isMainFrame) => {
+    if (isMainFrame !== false) notifyBattleAdvance(service.id);
     if (service.id === activeServiceId) pushActiveUrl();
   });
   view.webContents.setWindowOpenHandler(({ url }) => {
@@ -122,6 +142,9 @@ function createServiceView(service) {
 function showService(serviceId) {
   if (!views.has(serviceId)) return;
   activeServiceId = serviceId;
+  // Le service secondaire devient principal (clic sur son en-tête) :
+  // il repasse en pleine largeur, l'écran partagé se referme.
+  if (splitServiceId === serviceId) splitServiceId = null;
   layoutViews();
   pushActiveUrl();
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -136,6 +159,7 @@ function removeServiceView(serviceId, keepSession) {
     view.webContents.close();
     views.delete(serviceId);
   }
+  if (splitServiceId === serviceId) splitServiceId = null;
   if (!keepSession) {
     session
       .fromPartition(`persist:${serviceId}`)
@@ -220,6 +244,28 @@ ipcMain.handle('set-theme', (_e, theme) => {
   const result = settings.setTheme(theme);
   if (result) nativeTheme.themeSource = result.theme;
   return result ? result.theme : null;
+});
+
+// Langue de l'interface : le réglage ('system' ou code) vit dans settings.
+// Le PRELOAD la lit de façon synchrone à son chargement (sendSync) pour
+// initialiser api.t() — le renderer se recharge après un changement, le
+// preload repart alors dans la nouvelle langue.
+ipcMain.on('get-language-sync', (e) => {
+  e.returnValue = settings.get().language;
+});
+ipcMain.handle('get-language', () => settings.get().language);
+ipcMain.handle('set-language', (_e, language) => {
+  const result = settings.setLanguage(language);
+  return result ? result.language : null;
+});
+
+// Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a
+// besoin pour placer les WebContentsView.
+ipcMain.handle('get-sidebar-collapsed', () => settings.get().sidebarCollapsed === true);
+ipcMain.handle('set-sidebar-collapsed', (_e, collapsed) => {
+  settings.setSidebarCollapsed(collapsed);
+  layoutViews();
+  return true;
 });
 
 ipcMain.handle('get-catalog', () => catalog.list());
@@ -332,6 +378,63 @@ ipcMain.handle('relay-copy', (_e, text) => {
   return true;
 });
 
+// Auto-collage du relais/battle : colle le presse-papiers dans le champ de
+// saisie du site affiché. Sans champ focalisé, c'est un no-op silencieux —
+// le collage manuel reste possible. Aucune lecture du contenu des pages.
+ipcMain.handle('relay-paste', (_e, serviceId) => {
+  const view = views.get(serviceId);
+  if (!view || serviceId !== activeServiceId) return false;
+  try {
+    view.webContents.focus();
+    view.webContents.paste();
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+// Auto-envoi du relais/battle : simule Entrée dans la vue du service —
+// dans la quasi-totalité des chats IA, Entrée envoie le message. Heuristique
+// sans sélecteur : certains sites exigent un clic sur un bouton (rare).
+ipcMain.handle('relay-send', (_e, serviceId) => {
+  const view = views.get(serviceId);
+  if (!view || serviceId !== activeServiceId) return false;
+  try {
+    view.webContents.focus();
+    view.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
+    view.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+// Détection d'envoi (battle automatique) : armé sur un service, le premier
+// changement d'URL de sa vue (l'IA crée la conversation = prompt envoyé)
+// notifie le renderer pour passer à l'IA suivante. Désarmé après usage ou
+// en cas de changement d'arme.
+let armedServiceId = null;
+ipcMain.handle('arm-battle-advance', (_e, serviceId) => {
+  armedServiceId = serviceId || null;
+  return armedServiceId !== null;
+});
+
+function notifyBattleAdvance(serviceId) {
+  if (armedServiceId !== serviceId) return;
+  armedServiceId = null;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('battle-advance', serviceId);
+  }
+}
+
+// Écran partagé : serviceId = moitié droite, null = pleine largeur.
+ipcMain.handle('set-split', (_e, serviceId) => {
+  splitServiceId =
+    serviceId && views.has(serviceId) && serviceId !== activeServiceId ? serviceId : null;
+  layoutViews();
+  return splitServiceId;
+});
+
 // Export du registre : dialogue natif « Enregistrer sous », JSON brut.
 ipcMain.handle('export-registry', async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
@@ -434,6 +537,8 @@ if (!gotInstanceLock) {
   // force. Appliqué avant createWindow pour éviter tout flash au démarrage.
   settings.init(userData);
   nativeTheme.themeSource = settings.get().theme;
+  // i18n : le PRELOAD résout la langue à son chargement (get-language-sync,
+  // ci-dessous) — le main n'a jamais de texte à traduire.
 
   // Les logos importés vivent dans userData/logos ; le renderer ne peut pas
   // y accéder en file:// direct, on les sert via le schéma interne.
@@ -456,6 +561,13 @@ if (!gotInstanceLock) {
     if (!svc.logo && entry.logo) patch.logo = entry.logo;
     if (!svc.excludeRegex && entry.excludeRegex) patch.excludeRegex = entry.excludeRegex;
     if (!svc.stripTitleRegex && entry.stripTitleRegex) patch.stripTitleRegex = entry.stripTitleRegex;
+    if (svc.rootChat !== true && entry.rootChat) patch.rootChat = true;
+    if (!svc.genericTitleRegex && entry.genericTitleRegex) patch.genericTitleRegex = entry.genericTitleRegex;
+    // Contre-patch : des champs (rootChat, regex) posés par une version
+    // précédente alors que le catalogue ne les porte plus doivent disparaître.
+    if (svc.rootChat === true && !entry.rootChat) patch.rootChat = false;
+    if (svc.genericTitleRegex && !entry.genericTitleRegex) patch.genericTitleRegex = null;
+    if (svc.stripTitleRegex && !entry.stripTitleRegex) patch.stripTitleRegex = null;
     if (Object.keys(patch).length > 0) registry.update(svc.id, patch);
   }
 
@@ -467,6 +579,11 @@ if (!gotInstanceLock) {
   for (const svc of registry.list()) {
     if (svc.stripTitleRegex) convStore.stripTitle(svc.id, svc.stripTitleRegex);
     if (svc.excludeRegex) convStore.purgeMatching(svc.id, svc.excludeRegex);
+    // Titres de marque enregistrés avant le filtre (ex. « Copilot » à la
+    // racine) : ils n'ont jamais été des conversations.
+    if (svc.genericTitleRegex) convStore.purgeMatchingTitle(svc.id, svc.genericTitleRegex);
+    // Entrées racine d'un service sans rootChat (ancienne version) : mortes.
+    if (svc.rootChat !== true) convStore.purgeRoot(svc.id, svc.url);
   }
 
   createWindow();

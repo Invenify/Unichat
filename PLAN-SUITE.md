@@ -19,8 +19,8 @@ le dernier commit).
 - **Phase 4** : édition d'un service (✎ : nom, couleurs, URL, exclusions,
   regex de blocage), export/import du registre (dialogues natifs, fusion
   par URL), barre d'adresse dynamique (URL courante de la vue active).
-- **Catalogue** (`src/shared/catalog.js`, déclaratif, 19 services : ChatGPT,
-  Claude, Gemini, Copilot, Perplexity, Le Chat, Euria, Lumo, Grok,
+- **Catalogue** (`src/shared/catalog.js`, déclaratif, 20 services : ChatGPT,
+  Claude, Gemini, Copilot, Duck.ai, Perplexity, Le Chat, Euria, Lumo, Grok,
   DeepSeek, HuggingChat, Poe, Qwen, Kimi, Meta AI, Character.AI, You.com,
   Z.ai, Pi).
   - Onboarding au 1er lancement (registre vide → popup de choix).
@@ -43,13 +43,78 @@ le dernier commit).
    `v2.auth.mistral.ai`, `account.proton.me` ne polluent jamais) ;
 3. pas une page de connexion (`/login|signin|signup|register|auth|connexion`) ;
 4. pas exclue par `excludeRegex` du service (Lumo : `/guest`) ;
-5. pas la racine du service (origine + chemin, paramètres ignorés) ;
+5. pas la racine du service (origine + chemin, paramètres ignorés), SAUF
+   si `rootChat: true` (Duck.ai : la conversation vit à la racine ;
+   Copilot/Lumo testés puis retirés — rien ne s'enregistre pour eux) ;
 6. le titre est nettoyé par `stripTitleRegex` du service (ex. Open WebUI :
-   `'\s*/\s*Open WebUI$'` → on garde le nom du chat seul).
+   `'\s*/\s*Open WebUI$'` → on garde le nom du chat seul) ;
+7. le titre nettoyé passe `isRecordableTitle` : ≥ 3 caractères, pas le nom
+   du service, ne matche pas `genericTitleRegex` (ex. Duck.ai : les titres
+   de marque ne sont jamais des conversations). Pour un service `rootChat`
+   dont le titre reste générique : entrée de repli « Conversation en cours ».
 
-`isChatUrl` et `cleanTitle` sont exportés (tests, purge d'historique).
+En entrée : `did-navigate`, `did-navigate-in-page` (SPA/History API, main
+frame uniquement) et `page-title-updated`. Au boot, `purgeMatchingTitle`
+retire les titres génériques enregistrés avant l'ajout du filtre.
+
+`isChatUrl`, `cleanTitle` et `isRecordableTitle` sont exportés (tests,
+purge d'historique).
 
 ## 3. Pièges découverts (à se rappeler)
+
+- **Écran partagé (Ctrl+E, desktop)** : `splitServiceId` vit dans le main
+  (bounds dans `layoutViews()`). Invariant : le service secondaire ne doit
+  JAMAIS être aussi le service actif — `showService()` referme l'écran
+  partagé dans ce cas, et le renderer fait de même (sinon le bouton sidebar
+  ment). IPC `set-split` valide toujours côté main.
+- **Auto-collage (relais/battle)** : `webContents.paste()` colle dans le
+  champ FOCALISÉ de la page — si rien n'est focalisé, no-op silencieux
+  (toast propose Ctrl+V). Le presse-papiers est recopié à chaque étape du
+  battle : le collage dans un site l'écrase.
+- **i18n (fr, en, de, es, it)** : dictionnaire unique dans
+  `src/shared/i18n.js` (~100 clés) partagé desktop/mobile. Desktop : exposé
+  par le PRELOAD (`api.t`) — le renderer n'est pas bundlé, il ne peut pas
+  require() le module ; le PRELOAD résout la langue à SON chargement via
+  `ipcRenderer.sendSync('get-language-sync')` (piège : la langue vit dans
+  l'instance du module du preload, la régler côté main ne sert à RIEN).
+  Mobile : import direct (bundle esbuild). Réglage 'system' | code, dans
+  settings.json (desktop) / localStorage `unichat.lang` (mobile).
+  Changement → rechargement du renderer (tout est retraduit, pas d'état
+  résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
+  `-title` + `applyI18n()`.
+- **Réglages desktop (⚙ footer, Ctrl+,)** : overlay avec thème (boutons,
+  synchronisé avec le cycleur du footer), langue, « Gérer les services… »,
+  export/import du registre, à propos. Le footer ne garde que : thème,
+  relais, split, navigateur, ⚙.
+- **Palette universelle (Ctrl+Tab, desktop)** : overlay #palette-overlay,
+  recherche parmi l'historique des services ACTIFS (+ services par nom).
+  Entrée → `api.navigate` (conversation) ou `api.showService` (service).
+  Modal classique : `setModalOpen(true)` à l'ouverture. La cible devient
+  principale → écran partagé refermé si besoin. Rien côté mobile : l'écran
+  Chats a déjà sa recherche multi-services.
+- **Battle automatique (desktop)** : par étape : copie → collage à 400 ms
+  (`webContents.paste()`) → envoi à +600 ms (`relay-send`, Entrée simulé
+  via `sendInputEvent`) → `arm-battle-advance`. Le premier
+  did-navigate/-in-page de la vue armée (= l'IA crée la conversation)
+  envoie `battle-advance` → l'IA suivante ; repli 10 s sinon.
+  `advanceToken` garantit une seule avance en course. Une échelle de
+  reprises (collage/envoi multiples) a été essayée puis RETIRÉE :
+  elle doublait le prompt sur les sites où le collage marche mais pas
+  l'envoi (retour utilisateur). Testé en vrai : Le Chat parfait ;
+  Euria ne colle pas (bannière de consentement ?) ; Duck.ai colle mais
+  n'envoie pas du premier coup (repli 10 s → ▶ manuel). Mobile :
+  collage + envoi restent manuels (pas d'équivalent fiable à
+  paste()/sendInputEvent sur WebView Android).
+
+- **Battle/relais (Ctrl+P, desktop + mobile)** : le prompt vit dans
+  UniChat (localStorage `unichat.relay.prompt`), copié dans le presse-papiers
+  à CHAQUE étape (il est écrasé par le collage dans les sites). Barre de
+  progression dans la sidebar desktop / barre de vue sur mobile — jamais
+  de DOM flottant au-dessus des WebContentsView. Sur mobile, la copie
+  passe par `UniChatWebViews.copyText` (ClipboardManager natif), avec
+  repli `navigator.clipboard`. Bibliothèque de prompts :
+  `unichat.relay.prompts` (12 max). Un service sélectionné = relais
+  simple, plusieurs = battle.
 
 - **WebContentsView recouvrent la fenêtre** : les modals du renderer sont
   invisibles dessous. Le main masque les vues pendant une modal

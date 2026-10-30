@@ -11,36 +11,48 @@
     <header id="brand">
       <img id="brand-icon" src="assets/logo.png" alt="" />
       <span class="logo">UniChat</span>
+      <button id="sidebar-toggle" data-i18n-title="sidebarCollapse">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
     </header>
 
     <div class="search-wrap">
-      <input id="search" type="search" placeholder="Rechercher un chat…" autocomplete="off" />
+      <input id="search" type="search" data-i18n-placeholder="searchPlaceholder" autocomplete="off" />
     </div>
 
     <button id="add-service" class="add-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-      Ajouter un service…
+      <span data-i18n="addService"></span>
     </button>
 
     <nav id="service-list" aria-label="Services et conversations"></nav>
 
+    <!-- Battle : barre de progression pendant le battle (relais multi-IA) -->
+    <div id="battle-bar" class="hidden">
+      <span id="battle-label"></span>
+      <button id="battle-next" title="▶">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <button id="battle-stop" title="×">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Footer allégé : le reste vit dans les Réglages (⚙) -->
     <footer id="sidebar-footer">
       <span id="active-url"></span>
-      <button id="theme-toggle" title="Thème"></button>
-      <button id="relay-open" title="Relayer une demande vers un autre service (Ctrl+P)">
+      <button id="theme-toggle" title=""></button>
+      <button id="relay-open" data-i18n-title="relayOpenTitle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
-      <button id="manage-services" title="Activer / désactiver des services">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <button id="split-toggle" data-i18n-title="splitTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
       </button>
-      <button id="export-registry" title="Exporter le registre des services">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-      <button id="import-registry" title="Importer un registre de services">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </button>
-      <button id="open-external" title="Ouvrir dans le navigateur">
+      <button id="open-external" data-i18n-title="openExternal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </button>
+      <button id="settings-open" data-i18n-title="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </footer>
   </aside>
@@ -48,14 +60,14 @@
   <!-- Wizard « Ajouter / Modifier un service » -->
   <div id="wizard-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="wizard">
-      <h2 id="wizard-title">Ajouter un service</h2>
+      <h2 id="wizard-title"></h2>
 
       <div id="wizard-step-url" class="wizard-step">
-        <label for="svc-url">URL du chat IA</label>
+        <label for="svc-url" data-i18n="wizardUrlLabel"></label>
         <input id="svc-url" type="url" placeholder="https://chat.example.com" />
         <div class="wizard-actions">
-          <button id="wizard-analyze" class="primary">Analyser</button>
-          <button id="wizard-cancel" class="ghost">Annuler</button>
+          <button id="wizard-analyze" class="primary" data-i18n="wizardAnalyze"></button>
+          <button id="wizard-cancel" class="ghost" data-i18n="cancel"></button>
         </div>
       </div>
 
@@ -64,28 +76,28 @@
           <img id="svc-logo" alt="" />
           <span id="svc-name-preview"></span>
         </div>
-        <label for="svc-name">Nom</label>
+        <label for="svc-name" data-i18n="wizardName"></label>
         <input id="svc-name" type="text" />
-        <label for="svc-logo-url">Logo (URL, ou importez un fichier)</label>
+        <label for="svc-logo-url" data-i18n="wizardLogoLabel"></label>
         <div class="logo-row">
           <input id="svc-logo-url" type="url" placeholder="https://…/logo.png" />
-          <button id="svc-logo-import" type="button">Importer…</button>
+          <button id="svc-logo-import" type="button" data-i18n="wizardImportFile"></button>
         </div>
-        <label for="svc-accent">Couleur d'accentuation</label>
+        <label for="svc-accent" data-i18n="wizardAccent"></label>
         <input id="svc-accent" type="color" />
-        <label for="svc-accent2">Couleur secondaire</label>
+        <label for="svc-accent2" data-i18n="wizardAccent2"></label>
         <input id="svc-accent2" type="color" />
 
-        <label for="svc-url-edit" class="edit-only hidden">URL de démarrage</label>
+        <label for="svc-url-edit" class="edit-only hidden" data-i18n="wizardStartUrl"></label>
         <input id="svc-url-edit" type="url" class="edit-only hidden" />
-        <label for="svc-exclude" class="edit-only hidden">Exclure de l'historique (regex, optionnel)</label>
-        <input id="svc-exclude" type="text" class="edit-only hidden" placeholder="ex. /login|/settings" />
-        <label for="svc-blocknav" class="edit-only hidden">Bloquer les redirections vers (regex, optionnel)</label>
-        <input id="svc-blocknav" type="text" class="edit-only hidden" placeholder="ex. ^https://ksuite\.infomaniak\.com" />
+        <label for="svc-exclude" class="edit-only hidden" data-i18n="wizardExclude"></label>
+        <input id="svc-exclude" type="text" class="edit-only hidden" data-i18n-placeholder="wizardExcludePh" />
+        <label for="svc-blocknav" class="edit-only hidden" data-i18n="wizardBlocknav"></label>
+        <input id="svc-blocknav" type="text" class="edit-only hidden" data-i18n-placeholder="wizardBlocknavPh" />
 
         <div class="wizard-actions">
-          <button id="wizard-save" class="primary">Ajouter le service</button>
-          <button id="wizard-back" class="ghost">Retour</button>
+          <button id="wizard-save" class="primary"></button>
+          <button id="wizard-back" class="ghost" data-i18n="wizardBack"></button>
         </div>
       </div>
 
@@ -97,15 +109,11 @@
   <div id="remove-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="wizard">
       <h2 id="remove-title"></h2>
-      <p class="remove-hint">
-        Supprimer le service retire son entrée du registre et sa vue.
-        La session (connexion) peut être conservée : le service réapparaîtra
-        déjà connecté s'il est réajouté avec la même URL.
-      </p>
+      <p class="remove-hint" data-i18n="removeHint"></p>
       <div class="wizard-actions">
-        <button id="remove-delete-session" class="primary danger">Supprimer et déconnecter</button>
-        <button id="remove-keep-session" class="ghost">Garder la session</button>
-        <button id="remove-cancel" class="ghost">Annuler</button>
+        <button id="remove-delete-session" class="primary danger" data-i18n="removeDeleteSession"></button>
+        <button id="remove-keep-session" class="ghost" data-i18n="removeKeepSession"></button>
+        <button id="remove-cancel" class="ghost" data-i18n="cancel"></button>
       </div>
     </div>
   </div>
@@ -113,41 +121,88 @@
   <!-- Catalogue : onboarding au premier lancement, puis gestion activer/désactiver -->
   <div id="catalog-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="catalog-popup">
-      <button id="catalog-close" class="catalog-close" title="Fermer (Échap)">
+      <button id="catalog-close" class="catalog-close" data-i18n-title="close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <h2 id="catalog-title">Choisir vos services IA</h2>
-      <p id="catalog-sub" class="catalog-sub">
-        Cliquez sur les services que vous voulez. Un clic les active, un second clic les désactive
-        (session et historique conservés).
-      </p>
+      <h2 id="catalog-title"></h2>
+      <p id="catalog-sub" class="catalog-sub"></p>
       <div id="catalog-list"></div>
       <div class="catalog-footer">
         <button id="catalog-add-url" class="ghost">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-          Ajouter par URL…
+          <span data-i18n="addByUrl"></span>
         </button>
-        <button id="catalog-done" class="primary">Terminé</button>
+        <button id="catalog-done" class="primary" data-i18n="done"></button>
       </div>
     </div>
   </div>
 
-  <!-- Relais : le prompt est saisi dans UniChat (jamais lu dans les sites),
-       copié vers le presse-papiers du service choisi. L'utilisateur colle
-       (Ctrl+V) et envoie. Règle d'or : zéro sélecteur, marche partout. -->
+  <!-- Relais / Battle : le prompt vit dans UniChat (jamais lu dans les
+       sites), collé puis envoyé automatiquement à chaque IA choisie. -->
   <div id="relay-overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="catalog-popup relay-popup">
-      <button id="relay-close" class="catalog-close" title="Fermer (Échap)">
+      <button id="relay-close" class="catalog-close" data-i18n-title="close">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-      <h2>Relayer une demande</h2>
-      <p class="catalog-sub">
-        Saisissez votre prompt ici, pas dans le site. Cliquez sur un service :
-        le prompt est copié dans le presse-papiers et le service s'affiche.
-        Collez-le (Ctrl+V) et envoyez. Le prompt reste mémorisé dans UniChat.
-      </p>
-      <textarea id="relay-text" rows="5" placeholder="Votre demande…"></textarea>
+      <h2 data-i18n="relayTitle"></h2>
+      <p class="catalog-sub" data-i18n="relaySub"></p>
+      <div id="relay-prompt-chips" class="prompt-chips"></div>
+      <textarea id="relay-text" rows="5" data-i18n-placeholder="relayPlaceholder"></textarea>
       <div id="relay-list"></div>
+      <div class="wizard-actions relay-actions">
+        <button id="relay-save-prompt" class="ghost" data-i18n="relaySavePrompt"></button>
+        <button id="relay-battle" class="primary" disabled></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Palette universelle : chercher une conversation, tous services
+       confondus (ou un service), y aller d'une touche. -->
+  <div id="palette-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="palette-popup">
+      <input id="palette-input" type="search" data-i18n-placeholder="palettePlaceholder" autocomplete="off" />
+      <div id="palette-list"></div>
+      <p class="palette-hint" data-i18n="paletteHint"></p>
+    </div>
+  </div>
+
+  <!-- Réglages : thème, langue, registre, services -->
+  <div id="settings-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="catalog-popup settings-popup">
+      <button id="settings-close" class="catalog-close" data-i18n-title="close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 data-i18n="settings"></h2>
+
+      <h3 class="settings-h" data-i18n="settingsThemeSection"></h3>
+      <div class="settings-row" id="theme-row">
+        <button class="settings-opt" data-theme="system" data-i18n="themeSystem"></button>
+        <button class="settings-opt" data-theme="light" data-i18n="themeLight"></button>
+        <button class="settings-opt" data-theme="dark" data-i18n="themeDark"></button>
+      </div>
+
+      <h3 class="settings-h" data-i18n="settingsLangSection"></h3>
+      <div class="settings-row" id="lang-row">
+        <button class="settings-opt" data-lang="system" data-i18n="langSystem"></button>
+        <button class="settings-opt" data-lang="fr">Français</button>
+        <button class="settings-opt" data-lang="en">English</button>
+        <button class="settings-opt" data-lang="de">Deutsch</button>
+        <button class="settings-opt" data-lang="es">Español</button>
+        <button class="settings-opt" data-lang="it">Italiano</button>
+      </div>
+
+      <h3 class="settings-h" data-i18n="settingsServicesSection"></h3>
+      <div class="settings-row">
+        <button id="settings-manage" class="settings-btn" data-i18n="manageServices"></button>
+      </div>
+
+      <h3 class="settings-h" data-i18n="settingsRegistrySection"></h3>
+      <div class="settings-row">
+        <button id="settings-export" class="settings-btn" data-i18n="registryExport"></button>
+        <button id="settings-import" class="settings-btn" data-i18n="registryImport"></button>
+      </div>
+
+      <p class="settings-about" data-i18n="settingsAboutText"></p>
     </div>
   </div>
 

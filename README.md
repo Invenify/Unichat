@@ -61,9 +61,14 @@ Binaires prêts à installer sur la [release 0.1.0](https://github.com/Invenify/
 |---|---|
 | **Registre dynamique** | Collez l'URL d'un chat IA : l'app récupère automatiquement son nom, son logo (favicon) et ses couleurs (theme-color, manifest). Tout est modifiable avant enregistrement. |
 | **Moteur de titres universel** | À chaque navigation, l'app enregistre `{service, url, titre de la page, date}`. La sidebar est construite à partir de cet historique — aucun sélecteur CSS à maintenir, le titre de la page EST le titre du chat. |
-| **Catalogue intégré** | 19 services connus (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) proposés au premier lancement, activables/désactivables à tout moment (session et historique conservés). |
+| **Catalogue intégré** | 20 services connus (ChatGPT, Claude, Gemini, Copilot, Duck.ai, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) proposés au premier lancement, activables/désactivables à tout moment (session et historique conservés). |
+| **Relais & battle d'IA** | Saisissez le prompt dans UniChat (Ctrl/Cmd+P), choisissez une IA (relais) ou plusieurs (battle). Pour chaque IA : le prompt est **collé puis envoyé automatiquement** (Entrée simulé), et dès que l'IA crée la conversation, la suivante prend le relais — zéro action humaine. Repli 10 s + bouton ▶ si une IA résiste. Bibliothèque de prompts mémorisés. Zéro sélecteur de site, le prompt n'est jamais lu depuis les pages. |
+| **Écran partagé (desktop)** | Deux IA côte à côte (Ctrl/Cmd+E, puis Ctrl/clic sur un service pour la moitié droite) : comparez les réponses sans basculer. |
+| **Sidebar (desktop)** | Réductible à un rail d'icônes (Ctrl/Cmd+B, état mémorisé), thème clair/sombre suivant l'OS. |
 | **Finitions** | Édition d'un service (nom, couleurs, logo, URL, exclusions), suppression avec session conservable ou déconnectée, barre d'adresse, export/import du registre en JSON (fusion par URL). |
-| **Raccourcis** | `Ctrl/Cmd+1…9` pour basculer de service, `Ctrl/Cmd+K` pour chercher une conversation. |
+| **Réglages & langues** | Menu Réglages (⚙ ou `Ctrl/Cmd+,`) : thème, **langue de l'interface** (français, anglais, allemand, espagnol, italien — suit la langue du système par défaut), gestion des services, export/import du registre. Desktop et mobile. |
+| **Palette universelle** | `Ctrl/Cmd+Tab` : cherchez une conversation parmi tous les services (ou un service par son nom) et y aller d'une touche — plus besoin de se souvenir de « sur quel site » vit un chat. |
+| **Raccourcis** | `Ctrl/Cmd+1…9` basculer de service, `Ctrl/Cmd+K` chercher, `Ctrl/Cmd+P` relais/battle, `Ctrl/Cmd+B` réduire la sidebar, `Ctrl/Cmd+E` écran partagé, `Ctrl/Cmd+Tab` palette universelle, `Ctrl/Cmd+,` réglages. |
 | **Thème** | Clair/sombre, suit l'OS en temps réel (les WebViews suivent). |
 
 ### Démarrage rapide

@@ -13,10 +13,13 @@
     <header class="topbar">
       <img class="brand-icon" src="assets/logo.png" alt="">
       <span class="brand">UniChat</span>
+      <button id="battle-open" data-i18n-title="mobileBattleTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
     </header>
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="search" type="search" placeholder="Rechercher un chat…" autocomplete="off">
+      <input id="search" type="search" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
     </div>
     <section id="chat-list" class="scroll-area" aria-label="Conversations"></section>
     <!-- Dock : logos des services actifs, accès direct au chat -->
@@ -42,33 +45,40 @@
 
   <!-- Écran Réglages -->
   <main id="screen-settings" class="screen">
-    <header class="topbar"><h1>Réglages</h1></header>
+    <header class="topbar"><h1 data-i18n="settings"></h1></header>
     <section class="scroll-area">
-      <h2 class="settings-h">Thème</h2>
+      <h2 class="settings-h" data-i18n="settingsThemeSection"></h2>
       <div class="theme-row" role="radiogroup">
-        <button class="theme-opt" data-theme="system">Système</button>
-        <button class="theme-opt" data-theme="light">Clair</button>
-        <button class="theme-opt" data-theme="dark">Sombre</button>
+        <button class="theme-opt" data-theme="system" data-i18n="themeSystem"></button>
+        <button class="theme-opt" data-theme="light" data-i18n="themeLight"></button>
+        <button class="theme-opt" data-theme="dark" data-i18n="themeDark"></button>
       </div>
-      <h2 class="settings-h">Registre</h2>
-      <button id="export-registry" class="settings-btn">Exporter (JSON)</button>
-      <button id="import-registry" class="settings-btn">Importer (JSON)</button>
+      <h2 class="settings-h" data-i18n="settingsLangSection"></h2>
+      <div class="lang-row" id="lang-row">
+        <button class="lang-opt" data-lang="system" data-i18n="langSystem"></button>
+        <button class="lang-opt" data-lang="fr">Français</button>
+        <button class="lang-opt" data-lang="en">English</button>
+        <button class="lang-opt" data-lang="de">Deutsch</button>
+        <button class="lang-opt" data-lang="es">Español</button>
+        <button class="lang-opt" data-lang="it">Italiano</button>
+      </div>
+      <h2 class="settings-h" data-i18n="settingsRegistrySection"></h2>
+      <button id="export-registry" class="settings-btn" data-i18n="registryExport"></button>
+      <button id="import-registry" class="settings-btn" data-i18n="registryImport"></button>
       <input id="import-file" type="file" accept="application/json" class="hidden">
-      <p class="settings-about">
-        Historique et registre 100 % locaux. Le titre de la page est le
-        titre du chat : aucun sélecteur CSS à maintenir.
-      </p>
+      <p class="settings-about" data-i18n="mobileAbout"></p>
     </section>
   </main>
 
   <!-- Vue service : la WebView native (phase 4) vit ici, par-dessus l'UI -->
   <section id="webview-holder" class="hidden">
     <header id="webview-bar" class="topbar">
-      <button id="webview-back" title="Retour">
+      <button id="webview-back" data-i18n-title="wizardBack">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <img id="webview-logo" alt="">
       <span id="webview-title"></span>
+      <button id="battle-next" class="hidden" title="Copier le prompt et passer à l'IA suivante"></button>
     </header>
     <div id="webview-slot"></div>
   </section>
@@ -77,15 +87,15 @@
   <nav id="bottomnav" aria-label="Navigation">
     <button class="nav-btn active" data-screen="chats">
       <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-      <span>Chats</span>
+      <span data-i18n="navChats"></span>
     </button>
     <button class="nav-btn" data-screen="services">
       <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
-      <span>Services</span>
+      <span data-i18n="navServices"></span>
     </button>
     <button class="nav-btn" data-screen="settings">
       <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-      <span>Réglages</span>
+      <span data-i18n="settings"></span>
     </button>
   </nav>
 
@@ -95,8 +105,8 @@
   <div id="sheet-catalog" class="sheet hidden" role="dialog" aria-modal="true">
     <div class="sheet-grab"></div>
     <div class="sheet-head">
-      <h2>Choisir vos services IA</h2>
-      <p class="sheet-sub">Un clic active, un second clic désactive (session et historique conservés).</p>
+      <h2 data-i18n="catalogTitlePick"></h2>
+      <p class="sheet-sub" data-i18n="mobileCatalogSub"></p>
     </div>
     <div id="catalog-list" class="sheet-body"></div>
     <div class="sheet-foot">
@@ -104,7 +114,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Ajouter par URL…
       </button>
-      <button id="catalog-done" class="primary">Terminé</button>
+      <button id="catalog-done" class="primary" data-i18n="done"></button>
     </div>
   </div>
 
@@ -124,7 +134,7 @@
     <div class="sheet-head"><h2 id="wizard-title">Ajouter un service</h2></div>
     <div class="sheet-body">
       <div id="wizard-step-url">
-        <label for="svc-url">URL du chat IA</label>
+        <label for="svc-url" data-i18n="wizardUrlLabel"></label>
         <input id="svc-url" type="url" placeholder="https://chat.example.com" inputmode="url">
       </div>
       <div id="wizard-step-confirm" class="hidden">
@@ -142,7 +152,7 @@
       <p id="wizard-error" class="error hidden"></p>
     </div>
     <div class="sheet-foot">
-      <button id="wizard-cancel" class="ghost">Annuler</button>
+      <button id="wizard-cancel" class="ghost" data-i18n="cancel"></button>
       <button id="wizard-next" class="primary">Analyser</button>
     </div>
   </div>
@@ -151,6 +161,26 @@
   <div id="sheet-menu" class="sheet hidden" role="dialog" aria-modal="true">
     <div class="sheet-grab"></div>
     <div id="menu-body" class="sheet-body menu-body"></div>
+  </div>
+
+  <!-- Battle d'IA : prompt saisi dans UniChat, copié vers le presse-papiers
+       de chaque IA choisie, une par une (zéro sélecteur de site). -->
+  <div id="sheet-battle" class="sheet sheet-full hidden" role="dialog" aria-modal="true">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h2 data-i18n="mobileBattleTitle"></h2>
+      <p class="sheet-sub" data-i18n="mobileBattleSub"></p>
+    </div>
+    <div class="sheet-body">
+      <div id="battle-prompt-chips" class="prompt-chips"></div>
+      <textarea id="battle-text" rows="4" data-i18n-placeholder="relayPlaceholder"></textarea>
+      <h3 class="battle-h" data-i18n="mobileBattlePart"></h3>
+      <div id="battle-svc-list"></div>
+    </div>
+    <div class="sheet-foot">
+      <button id="battle-prompt-save" class="ghost" data-i18n="relaySavePrompt"></button>
+      <button id="battle-start" class="primary">Relayer</button>
+    </div>
   </div>
 
   <div id="toast" class="hidden"></div>

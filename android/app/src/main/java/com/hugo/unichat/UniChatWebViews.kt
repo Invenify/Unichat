@@ -1,6 +1,9 @@
 package com.hugo.unichat
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
@@ -218,6 +221,18 @@ class UniChatWebViews : Plugin() {
                 activeId = null
                 stopPolling()
             }
+            call.resolve()
+        }
+    }
+
+    // Presse-papiers du système (relais / battle d'IA) : le prompt saisi
+    // dans UniChat part vers l'IA affichée, jamais l'inverse.
+    @PluginMethod
+    fun copyText(call: PluginCall) {
+        val text = call.getString("text") ?: return call.reject("text requis")
+        main.post {
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("UniChat", text))
             call.resolve()
         }
     }
