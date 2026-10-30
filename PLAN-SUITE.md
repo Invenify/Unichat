@@ -82,6 +82,11 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Rétention de l'historique (Réglages → Historique)** : 0 (illimité,
+  défaut) / 30 / 90 / 365 jours. Desktop : `conv-store.purgeOlderThan`
+  (sur updatedAt), purgé au changement du réglage ET au boot. Mobile :
+  `api.purgeOldHistory` (sur timestamp), purgé à chaque reload. Les
+  entrées épinglées suivent la même règle (simple, documenté).
 - **Bloque-pisteurs (desktop, Réglages → Vie privée)** : `src/shared/trackers.js`
   (liste courte et conservatrice : pub + analytics + pixels, jamais rien qui
   casse une connexion). Appliqué par `session.webRequest.onBeforeRequest`

@@ -8,7 +8,8 @@ import { isChatUrl, cleanTitle, resolveTitle } from '../src/shared/title-rules.j
 import { mkService, importable } from '../src/shared/service.js';
 import { list as catalogList, find as catalogFind, sameOrigin } from '../src/shared/catalog.js';
 
-const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang' };
+const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang', retention: 'unichat.retention' };
+const RETENTION_DAYS = [0, 30, 90, 365];
 
 function read(key, fallback) {
   try {
@@ -170,6 +171,30 @@ export const api = {
       return lang;
     }
     return null;
+  },
+
+  // Rétention de l'historique : purge des conversations plus anciennes
+  // que n jours (0 = illimité), identique au desktop (conv-store).
+  async getRetention() {
+    const d = parseInt(localStorage.getItem(K.retention) || '0', 10);
+    return RETENTION_DAYS.includes(d) ? d : 0;
+  },
+
+  async setRetention(days) {
+    if (!RETENTION_DAYS.includes(days)) return null;
+    localStorage.setItem(K.retention, String(days));
+    return days;
+  },
+
+  async purgeOldHistory() {
+    const days = await this.getRetention();
+    if (!days) return 0;
+    const cutoff = Date.now() - days * 86400000;
+    const history = read(K.history, []);
+    const kept = history.filter((e) => (e.timestamp || 0) >= cutoff);
+    const n = history.length - kept.length;
+    if (n > 0) write(K.history, kept);
+    return n;
   },
 
   // --- Métadonnées d'une URL (phase 6 : fetch natif, pas de CORS) ---

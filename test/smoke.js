@@ -340,6 +340,21 @@ const check = (label, cond) => {
   check('settings setBlockTrackers true', settings.setBlockTrackers(true).blockTrackers === true);
   check('settings blockTrackers persisté', settings.init(path.join(tmp, 'settings')).blockTrackers === true);
 
+  // Rétention de l'historique : purge des conversations trop anciennes
+  const DAY = 86400000;
+  convStore.upsert('svc-ret', 'https://chat.example.com/c/jeune', 'Chat récent');
+  convStore.listAll().find((e) => e.url.includes('jeune')).updatedAt = Date.now() - 5 * DAY;
+  convStore.upsert('svc-ret', 'https://chat.example.com/c/vieux', 'Chat ancien');
+  convStore.listAll().find((e) => e.url.includes('vieux')).updatedAt = Date.now() - 400 * DAY;
+  check('purgeOlderThan(365) retire les + d\u2019un an', convStore.purgeOlderThan(365) === 1);
+  check('purgeOlderThan garde les récents', convStore.listAll().some((e) => e.url.includes('jeune')));
+  check('purgeOlderThan(0) = illimité, no-op', convStore.purgeOlderThan(0) === 0);
+  convStore.removeService('svc-ret');
+  check('settings rétention défaut 0', settings.init(path.join(tmp, 'settings')).historyRetentionDays === 0);
+  check('settings setHistoryRetention 90', settings.setHistoryRetention(90).historyRetentionDays === 90);
+  check('settings rétention persistée', settings.init(path.join(tmp, 'settings')).historyRetentionDays === 90);
+  check('settings refuse rétention inconnue', settings.setHistoryRetention(42) === null);
+
   // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
   check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));
   i18n.setLang('fr');

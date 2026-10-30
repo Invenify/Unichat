@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('unichat', {
   setLanguage: (language) => ipcRenderer.invoke('set-language', language),
   getBlockTrackers: () => ipcRenderer.invoke('get-block-trackers'),
   setBlockTrackers: (on) => ipcRenderer.invoke('set-block-trackers', on),
+  getHistoryRetention: () => ipcRenderer.invoke('get-history-retention'),
+  setHistoryRetention: (days) => ipcRenderer.invoke('set-history-retention', days),
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),

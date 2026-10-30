@@ -761,6 +761,19 @@ document.querySelectorAll('#lang-row .lang-opt').forEach((btn) =>
   })
 );
 
+// Rétention de l'historique : purge au prochain chargement.
+document.querySelectorAll('#retention-row .retention-opt').forEach((btn) =>
+  btn.addEventListener('click', async () => {
+    const applied = await api.setRetention(parseInt(btn.dataset.days, 10));
+    if (applied !== null) {
+      document.querySelectorAll('#retention-row .retention-opt').forEach((b) => {
+        b.classList.toggle('on', parseInt(b.dataset.days, 10) === applied);
+      });
+      await reload();
+    }
+  })
+);
+
 $('#export-registry').addEventListener('click', async () => {
   const json = JSON.stringify(services, null, 2);
   // Phase 4 : share sheet Android. En attendant : presse-papiers.
@@ -791,6 +804,7 @@ $('#import-file').addEventListener('change', async (ev) => {
 // --- Boucle centrale ---
 
 async function reload() {
+  await api.purgeOldHistory(); // rétention « Historique » (0 = illimité)
   services = await api.getServices();
   history = await api.getHistory();
   renderChats();
@@ -817,6 +831,10 @@ function escapeHtml(s) {
   applyI18n();
   document.querySelectorAll('#lang-row .lang-opt').forEach((b) => {
     b.classList.toggle('on', b.dataset.lang === langSetting);
+  });
+  const retention = await api.getRetention();
+  document.querySelectorAll('#retention-row .retention-opt').forEach((b) => {
+    b.classList.toggle('on', parseInt(b.dataset.days, 10) === retention);
   });
   await applyTheme(await api.getTheme());
   await reload();

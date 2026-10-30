@@ -935,6 +935,7 @@ $('#split-toggle').addEventListener('click', () => setSplit(splitServiceId === n
 
 let languageSetting = 'system';
 let blockTrackers = false;
+let retentionDays = 0;
 
 function openSettings() {
   updateSettingsRows();
@@ -955,6 +956,9 @@ function updateSettingsRows() {
     b.classList.toggle('on', b.dataset.lang === languageSetting);
   });
   $('#block-trackers').classList.toggle('on', blockTrackers);
+  document.querySelectorAll('#retention-row .settings-opt').forEach((b) => {
+    b.classList.toggle('on', parseInt(b.dataset.days, 10) === retentionDays);
+  });
 }
 
 $('#settings-open').addEventListener('click', openSettings);
@@ -990,6 +994,17 @@ document.querySelectorAll('#lang-row .settings-opt').forEach((btn) => {
 $('#block-trackers').addEventListener('click', async () => {
   blockTrackers = (await api.setBlockTrackers(!blockTrackers)) === true;
   updateSettingsRows();
+});
+
+// Rétention de l'historique : le main purge immédiatement au changement.
+document.querySelectorAll('#retention-row .settings-opt').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    const applied = await api.setHistoryRetention(parseInt(btn.dataset.days, 10));
+    if (applied !== null) {
+      retentionDays = applied;
+      updateSettingsRows();
+    }
+  });
 });
 
 // --- Palette universelle : une recherche, tous les services ---
@@ -1342,6 +1357,7 @@ api.onActiveUrlChanged((url) => {
   applySidebarCollapsed();
   languageSetting = (await api.getLanguage()) || 'system';
   blockTrackers = (await api.getBlockTrackers()) === true;
+  retentionDays = (await api.getHistoryRetention()) || 0;
   // Textes statiques traduits + <html lang> avant le premier rendu.
   applyI18n();
   updateRelayButton();

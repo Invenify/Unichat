@@ -201,4 +201,17 @@ function purgeRoot(serviceId, serviceUrl) {
   return n;
 }
 
-module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching, purgeMatchingTitle, purgeRoot };
+// Rétention : retire les conversations plus anciennes que n jours
+// (réglage « Historique », 0 = illimité). Renvoie le nombre retirées.
+function purgeOlderThan(days) {
+  const n = Number(days);
+  if (!n || n <= 0) return 0;
+  const cutoff = Date.now() - n * 86400000;
+  const before = entries.length;
+  entries = entries.filter((e) => (e.updatedAt || 0) >= cutoff);
+  const removed = before - entries.length;
+  if (removed > 0) saveSoon();
+  return removed;
+}
+
+module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching, purgeMatchingTitle, purgeRoot, purgeOlderThan };

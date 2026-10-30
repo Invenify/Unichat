@@ -288,6 +288,16 @@ ipcMain.handle('set-block-trackers', (_e, on) => {
   return result.blockTrackers;
 });
 
+// Rétention de l'historique : purge immédiate au changement + au démarrage.
+ipcMain.handle('get-history-retention', () => settings.get().historyRetentionDays);
+ipcMain.handle('set-history-retention', (_e, days) => {
+  const result = settings.setHistoryRetention(days);
+  if (!result) return null;
+  if (result.historyRetentionDays > 0) convStore.purgeOlderThan(result.historyRetentionDays);
+  pushHistory();
+  return result.historyRetentionDays;
+});
+
 // Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a
 // besoin pour placer les WebContentsView.
 ipcMain.handle('get-sidebar-collapsed', () => settings.get().sidebarCollapsed === true);
@@ -626,6 +636,12 @@ if (!gotInstanceLock) {
 
   createWindow();
   createTray();
+
+  // Rétention de l'historique : purge des conversations trop anciennes au
+  // démarrage (réglage « Historique », 0 = illimité).
+  if (settings.get().historyRetentionDays > 0) {
+    convStore.purgeOlderThan(settings.get().historyRetentionDays);
+  }
   });
 }
 

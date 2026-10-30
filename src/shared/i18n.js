@@ -131,6 +131,11 @@ const DICT = {
     duplicatedToast: "« {name} » dupliqué — connexion indépendante.",
     privacySection: "Vie privée",
     blockTrackers: "Bloquer les pisteurs et publicités",
+    historySection: "Historique",
+    retentionForever: "Illimité",
+    retention30: "30 jours",
+    retention90: "90 jours",
+    retention365: "1 an",
   },
 
   en: {
@@ -261,6 +266,11 @@ const DICT = {
     duplicatedToast: "“{name}” duplicated — independent login.",
     privacySection: "Privacy",
     blockTrackers: "Block trackers and ads",
+    historySection: "History",
+    retentionForever: "Forever",
+    retention30: "30 days",
+    retention90: "90 days",
+    retention365: "1 year",
   },
 
   de: {
@@ -391,6 +401,11 @@ const DICT = {
     duplicatedToast: "„{name}“ dupliziert — eigene Anmeldung.",
     privacySection: "Datenschutz",
     blockTrackers: "Tracker und Werbung blockieren",
+    historySection: "Verlauf",
+    retentionForever: "Unbegrenzt",
+    retention30: "30 Tage",
+    retention90: "90 Tage",
+    retention365: "1 Jahr",
   },
 
   es: {
@@ -521,6 +536,11 @@ const DICT = {
     duplicatedToast: "«{name}» duplicado — conexión independiente.",
     privacySection: "Privacidad",
     blockTrackers: "Bloquear rastreadores y anuncios",
+    historySection: "Historial",
+    retentionForever: "Ilimitado",
+    retention30: "30 días",
+    retention90: "90 días",
+    retention365: "1 año",
   },
 
   it: {
@@ -651,6 +671,11 @@ const DICT = {
     duplicatedToast: "«{name}» duplicato — accesso indipendente.",
     privacySection: "Privacy",
     blockTrackers: "Blocca tracker e pubblicità",
+    historySection: "Cronologia",
+    retentionForever: "Illimitata",
+    retention30: "30 giorni",
+    retention90: "90 giorni",
+    retention365: "1 anno",
   },
 };
 

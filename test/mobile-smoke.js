@@ -95,6 +95,20 @@ const check = (label, cond) => {
   await api.removeServiceHistory(duckSvc.id);
   await api.removeServiceHistory(copSvc.id);
 
+  // Rétention de l'historique (identique au desktop)
+  await api.setRetention(30);
+  const DAY = 86400000;
+  check('rétention : set/get', (await api.getRetention()) === 30);
+  // Une entrée datée de 40 jours doit disparaître au prochain passage.
+  await api.recordNavigation(svc, svc.url + '/c/jeune', 'Chat récent');
+  const hist = JSON.parse(localStorage.getItem('unichat.history'));
+  hist.find((e) => e.url.endsWith('/c/jeune')).timestamp = Date.now() - 40 * DAY;
+  localStorage.setItem('unichat.history', JSON.stringify(hist));
+  const purged = await api.purgeOldHistory();
+  check('rétention : entrée trop ancienne purgée', purged === 1 && (await api.getHistory()).every((e) => !e.url.endsWith('/c/jeune')));
+  await api.setRetention(0);
+  check('rétention 0 = illimité (no-op)', (await api.purgeOldHistory()) === 0);
+
   // Thème
   check('thème défaut system', (await api.getTheme()) === 'system');
   check('setTheme dark', (await api.setTheme('dark')) === 'dark');
