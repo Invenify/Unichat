@@ -133,6 +133,8 @@ input { font: inherit; }
 }
 
 .svc-group { margin-bottom: 6px; }
+.svc-group.dragging { opacity: 0.45; }
+.svc-header:active { cursor: grabbing; }
 
 .svc-header {
   display: flex;

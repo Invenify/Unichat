@@ -331,6 +331,15 @@ ipcMain.handle('show-service', (_e, serviceId) => {
   showService(serviceId);
 });
 
+// Ordre des services (glisser-déposer de la sidebar) : le nouvel ordre des
+// services actifs passe en tête, les absents restent en fin. L'ordre pilote
+// aussi les raccourcis Ctrl/Cmd+1…9.
+ipcMain.handle('reorder-services', (_e, orderedIds) => {
+  const list = registry.reorder(orderedIds);
+  pushServices();
+  return list;
+});
+
 // Les WebContentsView recouvrent la fenêtre : quand le renderer ouvre une
 // modal (wizard, catalogue, suppression), on les masque pour la laisser voir.
 ipcMain.handle('set-modal-open', (_e, open) => {

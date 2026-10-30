@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('unichat', {
   setSplit: (serviceId) => ipcRenderer.invoke('set-split', serviceId),
   removeService: (id, keepSession) => ipcRenderer.invoke('remove-service', id, keepSession),
   showService: (id) => ipcRenderer.invoke('show-service', id),
+  reorderServices: (ids) => ipcRenderer.invoke('reorder-services', ids),
   setModalOpen: (open) => ipcRenderer.invoke('set-modal-open', open),
   navigate: (serviceId, url) => ipcRenderer.invoke('navigate', serviceId, url),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),

@@ -24,6 +24,8 @@ function applyI18n() {
 let services = [];
 let history = [];
 let activeServiceId = null;
+let dragSvcId = null; // service en cours de glisser (ordre de la sidebar)
+let dragSvcEl = null; // son groupe dans le DOM
 let searchTerm = '';
 let analysis = null; // résultat du wizard en cours
 let wizardMode = 'add'; // 'add' | 'edit'
@@ -136,6 +138,7 @@ function render() {
   for (const svc of visible) {
     const group = document.createElement('div');
     group.className = 'svc-group';
+    group.dataset.svcId = svc.id;
 
     const header = document.createElement('button');
     header.className = 'svc-header' + (svc.id === activeServiceId ? ' active' : '');
@@ -176,12 +179,34 @@ function render() {
         return;
       }
       activeServiceId = svc.id;
-      // Le service secondaire devient principal : écran partagé refermé
-      // (le main fait de même dans showService).
       if (splitServiceId === svc.id) splitServiceId = null;
       updateSplitButton();
       api.showService(svc.id);
       render();
+    });
+
+    // Glisser-déposer : l'en-tête déplace le service dans la sidebar
+    // (ex. Euria et Euria Pro côte à côte). L'ordre pilote aussi les
+    // raccourcis Ctrl/Cmd+1…9 et se persiste dans le registre.
+    header.draggable = true;
+    header.addEventListener('dragstart', (ev) => {
+      dragSvcId = svc.id;
+      dragSvcEl = group;
+      group.classList.add('dragging');
+      ev.dataTransfer.effectAllowed = 'move';
+      ev.dataTransfer.setData('text/plain', svc.id);
+    });
+    header.addEventListener('dragend', async () => {
+      group.classList.remove('dragging');
+      dragSvcId = null;
+      dragSvcEl = null;
+      const ids = [...list.querySelectorAll('.svc-group')].map((g) => g.dataset.svcId);
+      const updated = await api.reorderServices(ids);
+      if (updated) {
+        services = updated;
+        render();
+        toast(t('mobileOrderToast'));
+      }
     });
     group.appendChild(header);
 
@@ -1176,6 +1201,21 @@ $('#remove-overlay').addEventListener('click', (e) => {
 $('#search').addEventListener('input', (e) => {
   searchTerm = e.target.value.trim().toLowerCase();
   render();
+});
+
+// Glisser-déposer des services : déplacement en direct du groupe survolé
+// (au-dessus/en-dessous de son en-tête), commit de l'ordre au relâchement.
+$('#service-list').addEventListener('dragover', (e) => {
+  if (!dragSvcId || !dragSvcEl) return;
+  const target = e.target.closest('.svc-group');
+  if (!target || target === dragSvcEl) return;
+  e.preventDefault();
+  const head = target.querySelector('.svc-header');
+  if (!head) return;
+  const r = head.getBoundingClientRect();
+  const before = e.clientY < r.top + r.height / 2;
+  if (before) target.before(dragSvcEl);
+  else target.after(dragSvcEl);
 });
 
 $('#open-external').addEventListener('click', () => {

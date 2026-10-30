@@ -71,6 +71,16 @@ const check = (label, cond) => {
   check('logo importé référencé par le schéma interne', registry.get(added.id).logo === 'unichat-logo://f/abc123.png');
   check('customLogo désactivable (retour au catalogue)', (registry.update(added.id, { customLogo: false }), registry.get(added.id).customLogo === false));
 
+  // Réordonnancement (glisser-déposer sidebar / dock mobile) : ids listés
+  // en tête dans cet ordre, absents en fin, ordre conservé.
+  const svcA = registry.add({ name: 'Svc A', url: 'https://a.example', accent: '#111111' });
+  const svcB = registry.add({ name: 'Svc B', url: 'https://b.example', accent: '#222222' });
+  const ro = registry.reorder([svcB.id, added.id, 'svc-inconnu']);
+  check('reorder : ordre appliqué', ro[0].id === svcB.id && ro[1].id === added.id);
+  check('reorder : absents en fin, ordre conservé', ro.slice(2).every((s) => s.id !== svcB.id && s.id !== added.id) && ro[ro.length - 1].id === svcA.id);
+  registry.remove(svcA.id);
+  registry.remove(svcB.id);
+
   // stripTitleRegex : suffixe de marque retiré des titres (ex. « <chat> / Open WebUI »)
   const owui = { stripTitleRegex: '\\s*/\\s*Open WebUI$' };
   check('stripTitleRegex retire « / Open WebUI »', titleTracker.cleanTitle(owui, 'meteo montreal / Open WebUI') === 'meteo montreal');

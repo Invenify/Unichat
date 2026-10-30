@@ -82,6 +82,12 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Ordre des services (desktop, drag & drop)** : l'en-tête d'un service
+  est draggable (HTML5 dnd), déplacement DOM en direct (dragover délégué
+  sur #service-list, insertion avant/après selon la moitié de l'en-tête
+  survolé), commit au dragend → IPC `reorder-services` → `registry.reorder`
+  (ids actifs en tête, désactivés en fin, ordre conservé — mêmes sémantiques
+  que mobile/api.js). L'ordre pilote aussi Ctrl/Cmd+1…9.
 - **Multi-comptes (desktop)** : « Dupliquer (compte séparé) » dans la
   fenêtre d'édition (✎). Nouvelle entrée de registre = nouvel id = nouvelle
   partition `persist:<id>` : connexion indépendante. Suffixe « (n) »

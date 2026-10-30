@@ -66,6 +66,20 @@ function remove(id) {
   return svc;
 }
 
+// Réordonne le registre (glisser-déposer de la sidebar / du dock mobile) :
+// les ids listés passent en tête dans cet ordre ; les absents (désactivés)
+// restent en fin, ordre conservé. Idem à mobile/api.js reorderServices.
+function reorder(orderedIds) {
+  const ids = (Array.isArray(orderedIds) ? orderedIds : []).filter((id) => get(id));
+  const next = ids.map((id) => get(id));
+  for (const s of services) {
+    if (!ids.includes(s.id)) next.push(s);
+  }
+  services = next;
+  save();
+  return list();
+}
+
 // Import d'un registre exporté : fusion par URL, jamais d'écrasement.
 // Les entrées existantes (même URL) sont ignorées, les autres ajoutées.
 function importAll(list) {
@@ -76,4 +90,4 @@ function importAll(list) {
   return entries.length;
 }
 
-module.exports = { init, list, get, add, update, remove, importAll };
+module.exports = { init, list, get, add, update, remove, reorder, importAll };
