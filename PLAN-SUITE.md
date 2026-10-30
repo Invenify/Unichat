@@ -89,7 +89,9 @@ purge d'historique).
   Ctrl/Cmd+1…9. Le nouvel espace démarre avec les services affichés.
   Changement d'espace → `syncWorkspaceViews()` met en veille les vues
   hors espace (réveil au retour). Appartenance : toggles dans la fenêtre
-  d'édition (✎) du service. Mobile : pas d'équivalent (écrans déjà
+  d'édition (✎) du service. **Chip #workspace-switch sous le logo** :
+  menu de bascule rapide (Tous / chaque espace / Gérer…) — cachée sans
+  espace. Mobile : pas d'équivalent (écrans déjà
   séparés par le dock).
 - **Hibernation (desktop, Réglages → Ressources)** : 0 (jamais, défaut) /
   5 / 15 / 30 / 60 min. Veilleuse 30 s dans le main : toute vue ni active,
