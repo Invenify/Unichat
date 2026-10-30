@@ -934,6 +934,7 @@ $('#split-toggle').addEventListener('click', () => setSplit(splitServiceId === n
 // --- Réglages : thème, langue, services, registre (bouton ⚙ du footer) ---
 
 let languageSetting = 'system';
+let blockTrackers = false;
 
 function openSettings() {
   updateSettingsRows();
@@ -953,6 +954,7 @@ function updateSettingsRows() {
   document.querySelectorAll('#lang-row .settings-opt').forEach((b) => {
     b.classList.toggle('on', b.dataset.lang === languageSetting);
   });
+  $('#block-trackers').classList.toggle('on', blockTrackers);
 }
 
 $('#settings-open').addEventListener('click', openSettings);
@@ -982,6 +984,12 @@ document.querySelectorAll('#lang-row .settings-opt').forEach((btn) => {
     const applied = await api.setLanguage(btn.dataset.lang);
     if (applied) window.location.reload();
   });
+});
+
+// Bloque-pisteurs : appliqué à chaud aux vues vivantes par le main.
+$('#block-trackers').addEventListener('click', async () => {
+  blockTrackers = (await api.setBlockTrackers(!blockTrackers)) === true;
+  updateSettingsRows();
 });
 
 // --- Palette universelle : une recherche, tous les services ---
@@ -1333,6 +1341,7 @@ api.onActiveUrlChanged((url) => {
   sidebarCollapsed = (await api.getSidebarCollapsed()) === true;
   applySidebarCollapsed();
   languageSetting = (await api.getLanguage()) || 'system';
+  blockTrackers = (await api.getBlockTrackers()) === true;
   // Textes statiques traduits + <html lang> avant le premier rendu.
   applyI18n();
   updateRelayButton();

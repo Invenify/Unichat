@@ -12,6 +12,7 @@ const logos = require('./logos');
 const settings = require('./settings');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
+const { isTrackerUrl } = require('../shared/trackers');
 
 // Sidebar : largeur normale, ou rail d'icônes quand elle est réduite
 // (bouton « ⟨ ⟩ » ou Ctrl/Cmd+B, état persisté dans settings.json).
@@ -82,9 +83,27 @@ function pushActiveUrl() {
   mainWindow.webContents.send('active-url-changed', url);
 }
 
+// Bloque-pisteurs (réglage « Vie privée ») : coupe les requêtes vers les
+// domaines de pistage/publicité dans une session de service. Appliqué à
+// la création de la vue et à chaque bascule du réglage.
+function applyTrackerBlock(ses) {
+  try {
+    if (settings.get().blockTrackers === true) {
+      ses.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (details, callback) => {
+        callback({ cancel: isTrackerUrl(details.url) });
+      });
+    } else {
+      ses.webRequest.onBeforeRequest(null);
+    }
+  } catch {
+    // environnement sans webRequest : silencieux
+  }
+}
+
 function createServiceView(service) {
   if (views.has(service.id)) return views.get(service.id);
   const ses = session.fromPartition(`persist:${service.id}`);
+  applyTrackerBlock(ses);
   const view = new WebContentsView({
     webPreferences: {
       session: ses,
@@ -257,6 +276,16 @@ ipcMain.handle('get-language', () => settings.get().language);
 ipcMain.handle('set-language', (_e, language) => {
   const result = settings.setLanguage(language);
   return result ? result.language : null;
+});
+
+ipcMain.handle('get-block-trackers', () => settings.get().blockTrackers === true);
+ipcMain.handle('set-block-trackers', (_e, on) => {
+  const result = settings.setBlockTrackers(on);
+  // Appliqué immédiatement aux sessions des vues vivantes.
+  for (const view of views.values()) {
+    applyTrackerBlock(view.webContents.session);
+  }
+  return result.blockTrackers;
 });
 
 // Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a

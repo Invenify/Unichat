@@ -11,6 +11,7 @@ const convStore = require(path.join(ROOT, 'src/engine/conv-store'));
 const titleTracker = require(path.join(ROOT, 'src/engine/title-tracker'));
 const titleRules = require(path.join(ROOT, 'src/shared/title-rules'));
 const i18n = require(path.join(ROOT, 'src/shared/i18n'));
+const trackers = require(path.join(ROOT, 'src/shared/trackers'));
 const metadata = require(path.join(ROOT, 'src/main/metadata'));
 const catalog = require(path.join(ROOT, 'src/shared/catalog'));
 const logos = require(path.join(ROOT, 'src/main/logos'));
@@ -325,6 +326,19 @@ const check = (label, cond) => {
   check('settings setLanguage en', settings.setLanguage('en').language === 'en');
   check('settings langue persistée', settings.init(path.join(tmp, 'settings')).language === 'en');
   check('settings refuse langue inconnue', settings.setLanguage('klingon') === null);
+
+  // Bloque-pisteurs : domaine de la liste (et sous-domaines) coupé, le
+  // reste (site du chat, SSO…) toujours autorisé.
+  check('trackers : doubleclick bloqué', trackers.isTrackerUrl('https://stats.g.doubleclick.net/r/collect?x=1') === true);
+  check('trackers : googletagmanager bloqué', trackers.isTrackerUrl('https://www.googletagmanager.com/gtag/js?id=G-1') === true);
+  check('trackers : facebook.net bloqué', trackers.isTrackerUrl('https://connect.facebook.net/fr_FR/fbevents.js') === true);
+  check('trackers : chat autorisé', trackers.isTrackerUrl('https://chat.mistral.ai/chat/abc') === false);
+  check('trackers : SSO autorisé', trackers.isTrackerUrl('https://account.proton.me/login') === false);
+  check('trackers : URL invalide → false', trackers.isTrackerUrl('pas une url') === false);
+  check('trackers : liste non vide', trackers.TRACKER_DOMAINS.length > 10);
+  check('settings blockTrackers défaut false', settings.init(path.join(tmp, 'settings')).blockTrackers === false);
+  check('settings setBlockTrackers true', settings.setBlockTrackers(true).blockTrackers === true);
+  check('settings blockTrackers persisté', settings.init(path.join(tmp, 'settings')).blockTrackers === true);
 
   // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
   check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));

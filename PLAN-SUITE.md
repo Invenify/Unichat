@@ -82,6 +82,12 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Bloque-pisteurs (desktop, Réglages → Vie privée)** : `src/shared/trackers.js`
+  (liste courte et conservatrice : pub + analytics + pixels, jamais rien qui
+  casse une connexion). Appliqué par `session.webRequest.onBeforeRequest`
+  sur chaque partition de service (à la création de la vue ET à chaque
+  bascule du réglage — pas de redémarrage). Désactivé par défaut.
+  Pas d'équivalent mobile (shouldInterceptRequest Kotlin : plus tard).
 - **Ordre des services (desktop, drag & drop)** : l'en-tête d'un service
   est draggable (HTML5 dnd), déplacement DOM en direct (dragover délégué
   sur #service-list, insertion avant/après selon la moitié de l'en-tête

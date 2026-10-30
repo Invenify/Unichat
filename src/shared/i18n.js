@@ -129,6 +129,8 @@ const DICT = {
     mobileWebViewNote: "La WebView native est disponible sur l'app Android uniquement.",
     duplicateService: "Dupliquer (compte séparé)",
     duplicatedToast: "« {name} » dupliqué — connexion indépendante.",
+    privacySection: "Vie privée",
+    blockTrackers: "Bloquer les pisteurs et publicités",
   },
 
   en: {
@@ -257,6 +259,8 @@ const DICT = {
     mobileWebViewNote: "The native WebView is available on the Android app only.",
     duplicateService: "Duplicate (separate account)",
     duplicatedToast: "“{name}” duplicated — independent login.",
+    privacySection: "Privacy",
+    blockTrackers: "Block trackers and ads",
   },
 
   de: {
@@ -385,6 +389,8 @@ const DICT = {
     mobileWebViewNote: "Die native WebView ist nur in der Android-App verfügbar.",
     duplicateService: "Duplizieren (getrenntes Konto)",
     duplicatedToast: "„{name}“ dupliziert — eigene Anmeldung.",
+    privacySection: "Datenschutz",
+    blockTrackers: "Tracker und Werbung blockieren",
   },
 
   es: {
@@ -513,6 +519,8 @@ const DICT = {
     mobileWebViewNote: "La WebView nativa solo está disponible en la app de Android.",
     duplicateService: "Duplicar (cuenta separada)",
     duplicatedToast: "«{name}» duplicado — conexión independiente.",
+    privacySection: "Privacidad",
+    blockTrackers: "Bloquear rastreadores y anuncios",
   },
 
   it: {
@@ -641,6 +649,8 @@ const DICT = {
     mobileWebViewNote: "La WebView nativa è disponibile solo nell'app Android.",
     duplicateService: "Duplica (account separato)",
     duplicatedToast: "«{name}» duplicato — accesso indipendente.",
+    privacySection: "Privacy",
+    blockTrackers: "Blocca tracker e pubblicità",
   },
 };
 

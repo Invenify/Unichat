@@ -2,6 +2,7 @@
 // « theme » : 'system' (suit l'OS), 'light' ou 'dark' (forcé).
 // « sidebarCollapsed » : sidebar réduite à un rail d'icônes (desktop).
 // « language » : 'system' (suit l'OS) ou code i18n (fr, en, de, es, it).
+// « blockTrackers » : coupe le pistage/la pub dans les vues (desktop).
 
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +11,7 @@ const THEMES = ['system', 'light', 'dark'];
 const LANG_CODES = ['system', 'fr', 'en', 'de', 'es', 'it'];
 
 let dataDir = null;
-let data = { theme: 'system', sidebarCollapsed: false, language: 'system' };
+let data = { theme: 'system', sidebarCollapsed: false, language: 'system', blockTrackers: false };
 
 function filePath() {
   return path.join(dataDir, 'settings.json');
@@ -26,6 +27,7 @@ function load() {
   if (!THEMES.includes(data.theme)) data.theme = 'system';
   data.sidebarCollapsed = data.sidebarCollapsed === true;
   if (!LANG_CODES.includes(data.language)) data.language = 'system';
+  data.blockTrackers = data.blockTrackers === true;
 }
 
 function save() {
@@ -57,6 +59,11 @@ module.exports = {
   setLanguage(language) {
     if (!LANG_CODES.includes(language)) return null;
     data.language = language;
+    save();
+    return { ...data };
+  },
+  setBlockTrackers(on) {
+    data.blockTrackers = on === true;
     save();
     return { ...data };
   },
