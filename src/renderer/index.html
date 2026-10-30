@@ -94,6 +94,8 @@
         <input id="svc-exclude" type="text" class="edit-only hidden" data-i18n-placeholder="wizardExcludePh" />
         <label for="svc-blocknav" class="edit-only hidden" data-i18n="wizardBlocknav"></label>
         <input id="svc-blocknav" type="text" class="edit-only hidden" data-i18n-placeholder="wizardBlocknavPh" />
+        <label class="edit-only hidden" data-i18n="workspacesSection"></label>
+        <div id="svc-workspaces" class="settings-row edit-only hidden"></div>
 
         <div class="wizard-actions">
           <button id="wizard-save" class="primary"></button>
@@ -213,6 +215,15 @@
         <button class="settings-opt" data-min="15" data-i18n="hibernate15"></button>
         <button class="settings-opt" data-min="30" data-i18n="hibernate30"></button>
         <button class="settings-opt" data-min="60" data-i18n="hibernate60"></button>
+      </div>
+
+      <h3 class="settings-h" data-i18n="workspacesSection"></h3>
+      <div class="settings-row" id="workspace-row">
+        <button class="settings-opt" data-ws="all" data-i18n="allServices"></button>
+      </div>
+      <div id="workspace-list"></div>
+      <div class="settings-row">
+        <button id="workspace-new" class="settings-btn" data-i18n="newWorkspace"></button>
       </div>
 
       <h3 class="settings-h" data-i18n="settingsServicesSection"></h3>

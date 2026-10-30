@@ -82,6 +82,15 @@ purge d'historique).
   Changement → rechargement du renderer (tout est retraduit, pas d'état
   résiduel). Textes statiques : attributs `data-i18n` / `-placeholder` /
   `-title` + `applyI18n()`.
+- **Espaces de travail (desktop)** : `src/main/workspaces.js`
+  (workspaces.json : { active, list:[{id,name,services}] } ; l'espace 'all'
+  est implicite, jamais stocké). Visibilité = actifs ∩ membres de l'espace —
+  côté renderer `visibleServices()` pilote sidebar, palette, relais et
+  Ctrl/Cmd+1…9. Le nouvel espace démarre avec les services affichés.
+  Changement d'espace → `syncWorkspaceViews()` met en veille les vues
+  hors espace (réveil au retour). Appartenance : toggles dans la fenêtre
+  d'édition (✎) du service. Mobile : pas d'équivalent (écrans déjà
+  séparés par le dock).
 - **Hibernation (desktop, Réglages → Ressources)** : 0 (jamais, défaut) /
   5 / 15 / 30 / 60 min. Veilleuse 30 s dans le main : toute vue ni active,
   ni split, pas affichée depuis plus de X minutes → `hibernateView`

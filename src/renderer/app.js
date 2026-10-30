@@ -24,8 +24,20 @@ function applyI18n() {
 let services = [];
 let history = [];
 let activeServiceId = null;
+let workspaces = { active: 'all', list: [] }; // espace de travail actif
 let dragSvcId = null; // service en cours de glisser (ordre de la sidebar)
 let dragSvcEl = null; // son groupe dans le DOM
+
+// Services visibles : actifs ET membres de l'espace de travail courant
+// ('all' = tous). Sidebar, palette, relais et raccourcis 1…9 suivent tous.
+function visibleServices() {
+  return services.filter((s) => {
+    if (s.enabled === false) return false;
+    if (workspaces.active === 'all') return true;
+    const ws = workspaces.list.find((w) => w.id === workspaces.active);
+    return ws ? ws.services.includes(s.id) : false;
+  });
+}
 let searchTerm = '';
 let analysis = null; // résultat du wizard en cours
 let wizardMode = 'add'; // 'add' | 'edit'
@@ -134,7 +146,7 @@ function render() {
   const list = $('#service-list');
   list.innerHTML = '';
 
-  const visible = services.filter((s) => s.enabled !== false);
+  const visible = visibleServices();
   for (const svc of visible) {
     const group = document.createElement('div');
     group.className = 'svc-group';
@@ -411,6 +423,7 @@ function openEdit(svc) {
   $('#svc-url-edit').value = svc.url;
   $('#svc-exclude').value = svc.excludeRegex || '';
   $('#svc-blocknav').value = svc.blockNavRegex || '';
+  renderEditWorkspaces(svc);
   $('#wizard-error').classList.add('hidden');
   $('#wizard-step-url').classList.add('hidden');
   $('#wizard-step-confirm').classList.remove('hidden');
@@ -422,6 +435,32 @@ function openEdit(svc) {
 function closeWizard() {
   $('#wizard-overlay').classList.add('hidden');
   api.setModalOpen(false);
+}
+
+// Appartenance du service aux espaces de travail (section « Espaces » de
+// la fenêtre d'édition). Cachée s'il n'existe aucun espace.
+function renderEditWorkspaces(svc) {
+  const wrap = $('#svc-workspaces');
+  wrap.replaceChildren();
+  if (workspaces.list.length === 0) {
+    wrap.classList.add('hidden');
+    return;
+  }
+  wrap.classList.remove('hidden');
+  for (const ws of workspaces.list) {
+    const member = ws.services.includes(svc.id);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'settings-opt' + (member ? ' on' : '');
+    btn.textContent = ws.name;
+    btn.title = ws.name;
+    btn.addEventListener('click', async () => {
+      workspaces = await api.workspacesToggleService(ws.id, svc.id, !member);
+      btn.classList.toggle('on', !member);
+      render(); // la sidebar peut perdre/gagner le service
+    });
+    wrap.appendChild(btn);
+  }
 }
 
 async function analyze() {
@@ -689,7 +728,7 @@ function renderPromptChips() {
 function renderRelayList() {
   const listEl = $('#relay-list');
   listEl.innerHTML = '';
-  const enabled = services.filter((s) => s.enabled !== false);
+  const enabled = visibleServices();
   for (const svc of enabled) {
     const selected = relaySelected.has(svc.id);
     const btn = document.createElement('button');
@@ -816,7 +855,7 @@ function openRelay() {
   $('#relay-text').value = localStorage.getItem(RELAY_KEY) || '';
   // Sélection par défaut : les services actifs, sauf sélection mémorisée
   // obsolète (service désactivé/supprimé depuis).
-  const enabled = services.filter((s) => s.enabled !== false);
+  const enabled = visibleServices();
   for (const s of enabled) {
     if (!relaySelected.has(s.id)) relaySelected.add(s.id);
   }
@@ -910,7 +949,7 @@ let splitServiceId = null;
 async function setSplit(serviceId) {
   // Bascule ON sans service : premier service actif différent de l'actuel.
   if (serviceId === undefined) {
-    const next = services.find((s) => s.enabled !== false && s.id !== activeServiceId);
+    const next = visibleServices().find((s) => s.id !== activeServiceId);
     if (!next) {
       toast(t('splitNone'));
       return;
@@ -939,6 +978,7 @@ let retentionDays = 0;
 let hibernateMinutes = 0;
 
 function openSettings() {
+  renderWorkspaces();
   updateSettingsRows();
   $('#settings-overlay').classList.remove('hidden');
   api.setModalOpen(true);
@@ -962,6 +1002,10 @@ function updateSettingsRows() {
   });
   document.querySelectorAll('#hibernate-row .settings-opt').forEach((b) => {
     b.classList.toggle('on', parseInt(b.dataset.min, 10) === hibernateMinutes);
+  });
+  $('#workspace-row [data-ws="all"]').classList.toggle('on', workspaces.active === 'all');
+  document.querySelectorAll('#workspace-list .settings-opt').forEach((b, i) => {
+    b.classList.toggle('on', workspaces.list[i] && workspaces.active === workspaces.list[i].id);
   });
 }
 
@@ -1023,6 +1067,84 @@ document.querySelectorAll('#hibernate-row .settings-opt').forEach((btn) => {
   });
 });
 
+// --- Espaces de travail : sous-ensembles nommés de services ---
+
+// Rendu de la liste dans les Réglages : « Tous les services » + un par un.
+function renderWorkspaces() {
+  const wrap = $('#workspace-list');
+  wrap.replaceChildren();
+  for (const ws of workspaces.list) {
+    const row = document.createElement('div');
+    row.className = 'settings-ws';
+
+    const name = document.createElement('button');
+    name.className = 'settings-opt' + (workspaces.active === ws.id ? ' on' : '');
+    name.textContent = ws.name;
+    name.title = ws.name;
+    name.addEventListener('click', async () => {
+      workspaces = await api.workspacesActivate(ws.id);
+      render();
+      renderWorkspaces();
+      updateSettingsRows();
+    });
+    row.appendChild(name);
+
+    const del = document.createElement('button');
+    del.className = 'ws-delete';
+    del.textContent = '×';
+    del.title = t('deleteWorkspace');
+    del.addEventListener('click', async () => {
+      workspaces = await api.workspacesDelete(ws.id);
+      render();
+      renderWorkspaces();
+      updateSettingsRows();
+    });
+    row.appendChild(del);
+    wrap.appendChild(row);
+  }
+}
+
+// Nouvel espace : saisie du nom en place, il démarre avec les services
+// actuellement affichés et devient l'espace actif.
+$('#workspace-new').addEventListener('click', () => {
+  const btn = $('#workspace-new');
+  if (btn.disabled) return;
+  const input = document.createElement('input');
+  input.className = 'settings-input';
+  input.placeholder = t('workspaceNamePh');
+  btn.replaceWith(input);
+  input.focus();
+  let done = false;
+  const finish = async (create) => {
+    if (done) return;
+    done = true;
+    const value = input.value.trim();
+    if (create && value) {
+      workspaces = await api.workspacesCreate(value);
+      render();
+      renderWorkspaces();
+      updateSettingsRows();
+      toast(t('workspaceCreated'));
+    } else {
+      input.replaceWith(btn);
+    }
+  };
+  input.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') finish(true);
+    else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+});
+
+// « Tous les services » : retour à l'espace implicite.
+$('#workspace-row [data-ws="all"]').addEventListener('click', async () => {
+  workspaces = await api.workspacesActivate('all');
+  render();
+  renderWorkspaces();
+  updateSettingsRows();
+});
+
 // --- Palette universelle : une recherche, tous les services ---
 
 // Ctrl/Cmd+Tab : chercher une conversation (ou un service) parmi tous les
@@ -1032,11 +1154,12 @@ let paletteIndex = 0;
 
 function paletteResults(query) {
   const q = (query || '').trim().toLowerCase();
+  const visible = new Set(visibleServices().map((s) => s.id));
   const svcById = new Map(services.map((s) => [s.id, s]));
   const convs = history
     .filter((e) => {
       const svc = svcById.get(e.serviceId);
-      return svc && svc.enabled !== false;
+      return svc && svc.enabled !== false && visible.has(svc.id);
     })
     .filter((e) => {
       if (!q) return true;
@@ -1048,8 +1171,8 @@ function paletteResults(query) {
     .map((e) => ({ kind: 'conv', svc: svcById.get(e.serviceId), entry: e }));
   // Un service qui matche par son nom : aller au service lui-même.
   const svcs = q
-    ? services
-        .filter((s) => s.enabled !== false && s.name.toLowerCase().includes(q))
+    ? visibleServices()
+        .filter((s) => s.name.toLowerCase().includes(q))
         .map((s) => ({ kind: 'svc', svc: s }))
     : [];
   return [...convs, ...svcs];
@@ -1315,8 +1438,9 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   const n = parseInt(e.key, 10);
-  if (n >= 1 && n <= 9 && services[n - 1]) {
-    activeServiceId = services[n - 1].id;
+  const visible = visibleServices();
+  if (n >= 1 && n <= 9 && visible[n - 1]) {
+    activeServiceId = visible[n - 1].id;
     if (splitServiceId === activeServiceId) splitServiceId = null;
     updateSplitButton();
     api.showService(activeServiceId);
@@ -1375,6 +1499,8 @@ api.onActiveUrlChanged((url) => {
   blockTrackers = (await api.getBlockTrackers()) === true;
   retentionDays = (await api.getHistoryRetention()) || 0;
   hibernateMinutes = (await api.getHibernateMinutes()) || 0;
+  workspaces = (await api.getWorkspaces()) || { active: 'all', list: [] };
+  updateSettingsRows(); // marqueurs des Réglages corrects avant la 1re ouverture
   // Textes statiques traduits + <html lang> avant le premier rendu.
   applyI18n();
   updateRelayButton();

@@ -142,6 +142,12 @@ const DICT = {
     hibernate15: "15 min",
     hibernate30: "30 min",
     hibernate60: "1 h",
+    workspacesSection: "Espaces de travail",
+    allServices: "Tous les services",
+    newWorkspace: "+ Nouvel espace (services affichés)",
+    workspaceNamePh: "Nom de l'espace…",
+    deleteWorkspace: "Supprimer cet espace",
+    workspaceCreated: "Espace créé et activé.",
   },
 
   en: {
@@ -283,6 +289,12 @@ const DICT = {
     hibernate15: "15 min",
     hibernate30: "30 min",
     hibernate60: "1 h",
+    workspacesSection: "Workspaces",
+    allServices: "All services",
+    newWorkspace: "+ New workspace (shown services)",
+    workspaceNamePh: "Workspace name…",
+    deleteWorkspace: "Delete this workspace",
+    workspaceCreated: "Workspace created and activated.",
   },
 
   de: {
@@ -424,6 +436,12 @@ const DICT = {
     hibernate15: "15 Min.",
     hibernate30: "30 Min.",
     hibernate60: "1 Std.",
+    workspacesSection: "Arbeitsbereiche",
+    allServices: "Alle Dienste",
+    newWorkspace: "+ Neuer Arbeitsbereich (angezeigte Dienste)",
+    workspaceNamePh: "Name des Arbeitsbereichs…",
+    deleteWorkspace: "Diesen Arbeitsbereich löschen",
+    workspaceCreated: "Arbeitsbereich erstellt und aktiviert.",
   },
 
   es: {
@@ -565,6 +583,12 @@ const DICT = {
     hibernate15: "15 min",
     hibernate30: "30 min",
     hibernate60: "1 h",
+    workspacesSection: "Espacios de trabajo",
+    allServices: "Todos los servicios",
+    newWorkspace: "+ Nuevo espacio (servicios mostrados)",
+    workspaceNamePh: "Nombre del espacio…",
+    deleteWorkspace: "Eliminar este espacio",
+    workspaceCreated: "Espacio creado y activado.",
   },
 
   it: {
@@ -706,6 +730,12 @@ const DICT = {
     hibernate15: "15 min",
     hibernate30: "30 min",
     hibernate60: "1 h",
+    workspacesSection: "Aree di lavoro",
+    allServices: "Tutti i servizi",
+    newWorkspace: "+ Nuova area (servizi mostrati)",
+    workspaceNamePh: "Nome dell'area…",
+    deleteWorkspace: "Elimina quest'area",
+    workspaceCreated: "Area creata e attivata.",
   },
 };
 

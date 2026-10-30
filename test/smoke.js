@@ -361,6 +361,31 @@ const check = (label, cond) => {
   check('settings hibernation persistée', settings.init(path.join(tmp, 'settings')).hibernateMinutes === 30);
   check('settings refuse hibernation inconnue', settings.setHibernateMinutes(7) === null);
 
+  // Espaces de travail : sous-ensembles nommés de services
+  const workspaces = require(path.join(ROOT, 'src/main/workspaces'));
+  const wsState = workspaces.init(path.join(tmp, 'workspaces'));
+  check('workspaces vides au départ', wsState.active === 'all' && wsState.list.length === 0);
+  const svcList = [
+    { id: 'a', name: 'A', url: 'https://a.com', enabled: true },
+    { id: 'b', name: 'B', url: 'https://b.com', enabled: true },
+    { id: 'c', name: 'C', url: 'https://c.com', enabled: false },
+  ];
+  check("visibleServices 'all' = actifs", workspaces.visibleServices(svcList).map((s) => s.id).join(',') === 'a,b');
+  const pro = workspaces.create('Pro', ['a', 'b']);
+  check('workspaces create', pro.name === 'Pro' && pro.services.join(',') === 'a,b');
+  workspaces.activate(pro.id);
+  check('workspaces activate', workspaces.get().active === pro.id);
+  check("visibleServices filtre par l'espace", workspaces.visibleServices(svcList).map((s) => s.id).join(',') === 'a,b');
+  workspaces.toggleService(pro.id, 'b', false);
+  check('workspaces retire un service', workspaces.visibleServices(svcList).map((s) => s.id).join(',') === 'a');
+  workspaces.toggleService(pro.id, 'b', true);
+  check('workspaces remet un service', workspaces.visibleServices(svcList).map((s) => s.id).join(',') === 'a,b');
+  check('workspaces persisté', workspaces.init(path.join(tmp, 'workspaces')).list[0].name === 'Pro');
+  workspaces.activate('all');
+  workspaces.remove(pro.id);
+  check('workspaces remove → retour à all', workspaces.get().active === 'all' && workspaces.get().list.length === 0);
+  check('workspaces activate id inconnu → all', workspaces.activate('ws-fantome').active === 'all');
+
   // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
   check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));
   i18n.setLang('fr');

@@ -10,6 +10,7 @@ const metadata = require('./metadata');
 const catalog = require('../shared/catalog');
 const logos = require('./logos');
 const settings = require('./settings');
+const workspaces = require('./workspaces');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 const { isTrackerUrl } = require('../shared/trackers');
@@ -47,6 +48,25 @@ function hibernateView(serviceId) {
   mainWindow.contentView.removeChildView(view);
   view.webContents.close(); // libère le processus renderer
   views.delete(serviceId);
+}
+
+// Espaces de travail : les vues des services devenus invisibles (changement
+// d'espace, service retiré) sont mises en veille — réveil au retour.
+function syncWorkspaceViews() {
+  const visible = new Set(workspaces.visibleServices(registry.list()).map((s) => s.id));
+  for (const [id] of views) {
+    if (id === activeServiceId) continue;
+    if (visible.has(id)) continue;
+    hibernateView(id);
+  }
+  if (activeServiceId && !visible.has(activeServiceId)) {
+    const next = [...visible][0] || null;
+    if (next) showService(next);
+    else {
+      activeServiceId = null;
+      layoutViews();
+    }
+  }
 }
 
 function startHibernationWatchdog() {
@@ -354,6 +374,33 @@ ipcMain.handle('set-hibernate-minutes', (_e, minutes) => {
   return result ? result.hibernateMinutes : null;
 });
 
+// Espaces de travail : sous-ensembles nommés de services (perso/pro).
+// Le nouvel espace démarre avec les services visibles actuellement ; les
+// vues des services hors espace sont mises en veille (réveil au retour).
+ipcMain.handle('get-workspaces', () => workspaces.get());
+ipcMain.handle('workspaces-activate', (_e, id) => {
+  const state = workspaces.activate(id);
+  syncWorkspaceViews();
+  return state;
+});
+ipcMain.handle('workspaces-create', (_e, name) => {
+  workspaces.create(name, workspaces.visibleServices(registry.list()).map((s) => s.id));
+  const state = workspaces.activate(workspaces.get().list.slice(-1)[0].id);
+  syncWorkspaceViews();
+  return state;
+});
+ipcMain.handle('workspaces-delete', (_e, id) => {
+  const state = workspaces.remove(id);
+  syncWorkspaceViews();
+  return state;
+});
+ipcMain.handle('workspaces-toggle-service', (_e, wsId, serviceId, member) => {
+  workspaces.toggleService(wsId, serviceId, member);
+  const state = workspaces.get();
+  syncWorkspaceViews();
+  return state;
+});
+
 // Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a
 // besoin pour placer les WebContentsView.
 ipcMain.handle('get-sidebar-collapsed', () => settings.get().sidebarCollapsed === true);
@@ -643,6 +690,7 @@ if (!gotInstanceLock) {
   const userData = app.getPath('userData');
   registry.init(userData);
   convStore.init(userData);
+  workspaces.init(userData);
 
   // Thème : nativeTheme.themeSource pilote prefers-color-scheme pour toute
   // l'app (sidebar ET vues des services) : 'system' suit l'OS, 'light'/'dark'

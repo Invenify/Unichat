@@ -22,6 +22,12 @@ contextBridge.exposeInMainWorld('unichat', {
   setHistoryRetention: (days) => ipcRenderer.invoke('set-history-retention', days),
   getHibernateMinutes: () => ipcRenderer.invoke('get-hibernate-minutes'),
   setHibernateMinutes: (minutes) => ipcRenderer.invoke('set-hibernate-minutes', minutes),
+  getWorkspaces: () => ipcRenderer.invoke('get-workspaces'),
+  workspacesActivate: (id) => ipcRenderer.invoke('workspaces-activate', id),
+  workspacesCreate: (name) => ipcRenderer.invoke('workspaces-create', name),
+  workspacesDelete: (id) => ipcRenderer.invoke('workspaces-delete', id),
+  workspacesToggleService: (wsId, serviceId, member) =>
+    ipcRenderer.invoke('workspaces-toggle-service', wsId, serviceId, member),
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),
