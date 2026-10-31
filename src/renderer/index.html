@@ -160,6 +160,7 @@
       <textarea id="relay-text" rows="5" data-i18n-placeholder="relayPlaceholder"></textarea>
       <div id="relay-list"></div>
       <div class="wizard-actions relay-actions">
+        <button id="relay-attach" class="ghost" data-i18n="attachFile"></button>
         <button id="relay-save-prompt" class="ghost" data-i18n="relaySavePrompt"></button>
         <button id="relay-battle" class="primary" disabled></button>
       </div>
@@ -251,7 +252,34 @@
         <button id="profile-import" class="settings-btn" data-i18n="profileImport"></button>
       </div>
 
+      <h3 class="settings-h" data-i18n="shortcutsTitle"></h3>
+      <div class="settings-row">
+        <button id="shortcuts-open" class="settings-btn" data-i18n="shortcutsTitle"></button>
+      </div>
+
       <p class="settings-about" data-i18n="settingsAboutText"></p>
+    </div>
+  </div>
+
+  <!-- Raccourcis clavier (Ctrl/Cmd+/) -->
+  <div id="shortcuts-overlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="catalog-popup shortcuts-popup">
+      <button id="shortcuts-close" class="catalog-close" data-i18n-title="close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 data-i18n="shortcutsTitle"></h2>
+      <table class="shortcuts-table">
+        <tr><td class="k">Ctrl/Cmd+1…9</td><td data-i18n="shortcutServices"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+K</td><td data-i18n="shortcutSearch"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+P</td><td data-i18n="shortcutRelay"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+N</td><td data-i18n="shortcutNewChat"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+Tab</td><td data-i18n="shortcutPalette"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+E</td><td data-i18n="shortcutSplit"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+B</td><td data-i18n="shortcutSidebar"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+,</td><td data-i18n="shortcutSettings"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+/</td><td data-i18n="shortcutDialog"></td></tr>
+        <tr><td class="k">Ctrl/Cmd+Alt+U</td><td data-i18n="shortcutGlobal"></td></tr>
+      </table>
     </div>
   </div>
 

@@ -829,6 +829,43 @@ async function battleStep() {
 // L'IA courante a navigué = le message est envoyé : IA suivante.
 api.onBattleAdvance(() => battleNext());
 
+// --- Modale des raccourcis clavier (Ctrl/Cmd+/) ---
+
+function openShortcuts() {
+  $('#shortcuts-overlay').classList.remove('hidden');
+  api.setModalOpen(true);
+}
+
+function closeShortcuts() {
+  $('#shortcuts-overlay').classList.add('hidden');
+  api.setModalOpen(false);
+}
+
+function toggleShortcuts() {
+  if ($('#shortcuts-overlay').classList.contains('hidden')) openShortcuts();
+  else closeShortcuts();
+}
+
+$('#shortcuts-close').addEventListener('click', closeShortcuts);
+$('#shortcuts-overlay').addEventListener('click', (e) => {
+  if (e.target === $('#shortcuts-overlay')) closeShortcuts();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#shortcuts-overlay').classList.contains('hidden')) {
+    closeShortcuts();
+  }
+});
+
+// Raccourci global (Ctrl/Cmd+Alt+U, système) : UniChat surgit par-dessus
+// tout, palette ouverte, prête à chercher ou lancer un battle — sauf si
+// une modal est déjà ouverte (l'utilisateur est occupé ailleurs).
+api.onSummon(() => {
+  const busy = ['#relay-overlay', '#settings-overlay', '#wizard-overlay', '#catalog-overlay', '#remove-overlay'].some(
+    (sel) => !$(sel).classList.contains('hidden')
+  );
+  if (!busy) openPalette();
+});
+
 function battleStop() {
   clearTimeout(advanceTimer);
   advanceToken += 1;
@@ -1468,6 +1505,30 @@ $('#settings-manage').addEventListener('click', () => {
 // --- Profil multi-appareil : export / import (services + espaces +
 // réglages + historique — jamais les sessions) ---
 
+$('#shortcuts-open').addEventListener('click', () => {
+  closeSettings();
+  openShortcuts();
+});
+
+// Joindre un fichier au prompt : lecture locale (128 Ko max, tronqué
+// au-delà), ajouté sous le texte saisi. Le fichier ne part que par le
+// prompt lui-même.
+$('#relay-attach').addEventListener('click', async () => {
+  const res = await api.attachFile();
+  if (!res.ok) {
+    if (!res.canceled) toast(t('wizardImportError', { error: res.error || '…' }));
+    return;
+  }
+  if (!res.text || !res.text.trim()) {
+    toast(t('attachEmpty'));
+    return;
+  }
+  const ta = $('#relay-text');
+  ta.value = ta.value.trim() ? `${ta.value.trim()}\n\n${res.text}` : res.text;
+  localStorage.setItem(RELAY_KEY, ta.value);
+  if (res.truncated) toast(t('attachTruncated'));
+});
+
 $('#profile-export').addEventListener('click', async () => {
   const res = await api.exportProfile();
   if (res.ok) toast(t('profileExported'));
@@ -1546,6 +1607,19 @@ document.addEventListener('keydown', (e) => {
   if (e.key === ',') {
     e.preventDefault();
     openSettings();
+    return;
+  }
+  if (e.key.toLowerCase() === 'n') {
+    e.preventDefault();
+    // Nouveau chat : retour à la racine du service actif (l'URL racine EST
+    // la page de nouvelle conversation sur la quasi-totalité des chats IA).
+    const svc = services.find((s) => s.id === activeServiceId);
+    if (svc) api.navigate(activeServiceId, svc.url);
+    return;
+  }
+  if (e.key === '/') {
+    e.preventDefault();
+    toggleShortcuts();
     return;
   }
   const n = parseInt(e.key, 10);

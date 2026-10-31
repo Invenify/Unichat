@@ -30,6 +30,12 @@ contextBridge.exposeInMainWorld('unichat', {
     ipcRenderer.invoke('workspaces-toggle-service', wsId, serviceId, member),
   exportProfile: () => ipcRenderer.invoke('export-profile'),
   importProfile: () => ipcRenderer.invoke('import-profile'),
+  attachFile: () => ipcRenderer.invoke('attach-prompt-file'),
+  onSummon: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on('summoned', listener);
+    return () => ipcRenderer.removeListener('summoned', listener);
+  },
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),

@@ -98,6 +98,15 @@ purge d'historique).
   l'écran Chats (l'écran Services montre tout). Pas de mise en veille
   mobile (pas de vues persistantes) ni de synchro desktop ↔ mobile
   (stockages indépendants).
+- **Raccourcis global + nouveaux** : `CommandOrControl+Alt+U` enregistré via
+  `globalShortcut` au boot (silencieux si déjà pris), `unregisterAll` au
+  will-quit ; déclenche showMainWindow + event 'summoned' → palette ouverte
+  par le renderer (sauf modal déjà ouverte). `Ctrl/Cmd+N` = navigate vers la
+  racine du service actif (nouveau chat). `Ctrl/Cmd+/` = modale raccourcis
+  (#shortcuts-overlay, table data-i18n). **Joindre un fichier** : IPC
+  `attach-prompt-file` (dialogue natif, texte, 128 Ko tronqué) → ajouté
+  sous le prompt ; mobile : #attach-file + file.text(), même limite.
+  #attach-file + file.text(), même limite.
 - **Profil multi-appareil** : `src/shared/profile.js` (schéma v1 : services,
   workspaces, settings, history — JAMAIS les sessions). Fusion sans
   écrasement : services par URL (importable), espaces par nom (union),

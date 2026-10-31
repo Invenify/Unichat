@@ -73,7 +73,7 @@ Binaires prêts à installer sur la [release 0.1.0](https://github.com/Invenify/
 | **Ressources** | Réglage « hibernation » : les IA non affichées depuis X minutes sont mises en veille (mémoire libérée), réveillées au clic sur leur dernière page — session conservée. Jamais pendant un battle. |
 | **Réglages & langues** | Menu Réglages (⚙ ou `Ctrl/Cmd+,`) : thème, **langue de l'interface** (français, anglais, allemand, espagnol, italien — suit la langue du système par défaut), **bloque-pisteurs** dans les vues (desktop), **rétention de l'historique** (illimité / 30 jours / 90 jours / 1 an), gestion des services, export/import du registre. Desktop et mobile. |
 | **Palette universelle** | `Ctrl/Cmd+Tab` : cherchez une conversation parmi tous les services (ou un service par son nom) et y aller d'une touche — plus besoin de se souvenir de « sur quel site » vit un chat. |
-| **Raccourcis** | `Ctrl/Cmd+1…9` basculer de service, `Ctrl/Cmd+K` chercher, `Ctrl/Cmd+P` relais/battle, `Ctrl/Cmd+B` réduire la sidebar, `Ctrl/Cmd+E` écran partagé, `Ctrl/Cmd+Tab` palette universelle, `Ctrl/Cmd+,` réglages. |
+| **Raccourcis** | `Ctrl/Cmd+1…9` service, `+K` chercher, `+P` relais/battle, `+N` nouveau chat, `+Tab` palette, `+E` écran partagé, `+B` sidebar, `+,` réglages, `+/` la liste des raccourcis — et `Ctrl/Cmd+Alt+U`, **raccourci système** : UniChat surgit par-dessus toute application, palette ouverte. **Joindre un fichier** au prompt (texte, 128 Ko) dans le relais, desktop et mobile. |
 | **Thème** | Clair/sombre, suit l'OS en temps réel (les WebViews suivent). |
 
 ### Démarrage rapide

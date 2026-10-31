@@ -594,6 +594,23 @@ body.sidebar-collapsed #toast { left: 76px; max-width: 380px; }
   color: var(--fg-dim);
 }
 
+/* Modale des raccourcis clavier (Ctrl/Cmd+/) */
+.shortcuts-popup { width: 480px; }
+.shortcuts-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+.shortcuts-table td { padding: 7px 4px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.shortcuts-table tr:last-child td { border-bottom: none; }
+.shortcuts-table .k {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--fg);
+  background: var(--bg-3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  width: 1%;
+}
+.shortcuts-table td:last-child { color: var(--fg-dim); padding-left: 14px; }
+
 /* Sélecteur d'espace : chip sous le logo, menu de bascule au clic */
 .ws-chip {
   display: flex;

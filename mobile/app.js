@@ -847,6 +847,30 @@ async function battleNext() {
 
 $('#battle-open').addEventListener('click', () => { closeSheets(); openBattleSheet(); });
 $('#battle-prompt-save').addEventListener('click', saveBattlePrompt);
+
+// Joindre un fichier au prompt : lecture locale (128 Ko max, tronqué
+// au-delà), ajouté sous le texte saisi.
+$('#battle-attach').addEventListener('click', () => $('#attach-file').click());
+$('#attach-file').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try {
+    const raw = await file.text();
+    if (!raw.trim()) {
+      toast(t('attachEmpty'));
+      return;
+    }
+    const MAX = 128 * 1024;
+    const truncated = raw.length > MAX;
+    const ta = $('#battle-text');
+    ta.value = (ta.value.trim() ? ta.value.trim() + '\n\n' : '') + (truncated ? raw.slice(0, MAX) : raw);
+    localStorage.setItem(RELAY_KEY, ta.value);
+    toast(truncated ? t('attachTruncated') : t('promptSaved'));
+  } catch {
+    toast(t('attachEmpty'));
+  }
+});
 $('#battle-start').addEventListener('click', battleStart);
 $('#battle-next').addEventListener('click', battleNext);
 

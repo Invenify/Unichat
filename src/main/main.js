@@ -1,7 +1,7 @@
 // main.js — fenêtre UniChat : sidebar (renderer) + un WebContentsView par
 // service, sessions persistantes, empilées, une seule visible.
 
-const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol, Tray, Menu, nativeImage, Notification, nativeTheme } = require('electron');
+const { app, BrowserWindow, WebContentsView, session, ipcMain, shell, dialog, clipboard, protocol, Tray, Menu, nativeImage, Notification, nativeTheme, globalShortcut } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -400,6 +400,34 @@ ipcMain.handle('workspaces-toggle-service', (_e, wsId, serviceId, member) => {
   const state = workspaces.get();
   syncWorkspaceViews();
   return state;
+});
+
+// Joindre un fichier au prompt (relais/battle) : lecture LOCALE du fichier
+// texte choisi, ajouté au prompt dans le renderer. Le fichier ne quitte
+// jamais la machine autrement que par le prompt lui-même. Limite 128 Ko
+// (tronqué au-delà), format texte uniquement.
+ipcMain.handle('attach-prompt-file', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Joindre un fichier au prompt',
+    filters: [
+      { name: 'Texte', extensions: ['txt', 'md', 'markdown', 'csv', 'json', 'html', 'xml', 'js', 'ts', 'py', 'log'] },
+    ],
+    properties: ['openFile'],
+  });
+  if (canceled || !filePaths || filePaths.length === 0) return { ok: false, canceled: true };
+  try {
+    const raw = fs.readFileSync(filePaths[0], 'utf8');
+    const MAX = 128 * 1024;
+    return {
+      ok: true,
+      name: path.basename(filePaths[0]),
+      text: raw.length > MAX ? raw.slice(0, MAX) : raw,
+      truncated: raw.length > MAX,
+    };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
 });
 
 // --- Profil multi-appareil : services + espaces + réglages + historique ---
@@ -839,11 +867,34 @@ if (!gotInstanceLock) {
   if (settings.get().historyRetentionDays > 0) {
     convStore.purgeOlderThan(settings.get().historyRetentionDays);
   }
+
+  // Raccourci global (système) : Ctrl/Cmd+Alt+U fait surgir UniChat par-
+  // dessus toute application, palette ouverte. Déjà pris par une autre
+  // app : silencieux, rien de bloquant.
+  try {
+    globalShortcut.register('CommandOrControl+Alt+U', () => {
+      showMainWindow();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('summoned');
+      }
+    });
+  } catch {
+    // raccourci système indisponible : silencieux
+  }
   });
 }
 
 app.on('before-quit', () => {
   isQuitting = true; // la fermeture de la fenêtre ne doit plus la cacher
+});
+
+app.on('will-quit', () => {
+  // Le raccourci global appartient à l'OS : toujours relâché en partant.
+  try {
+    globalShortcut.unregisterAll();
+  } catch {
+    // environnement sans raccourcis globaux : silencieux
+  }
 });
 
 app.on('activate', () => {
