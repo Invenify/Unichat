@@ -91,8 +91,13 @@ purge d'historique).
   hors espace (réveil au retour). Appartenance : toggles dans la fenêtre
   d'édition (✎) du service. **Chip #workspace-switch sous le logo** :
   menu de bascule rapide (Tous / chaque espace / Gérer…) — cachée sans
-  espace. Mobile : pas d'équivalent (écrans déjà
-  séparés par le dock).
+  espace. **Mobile : porté à l'identique** — même forme dans localStorage
+  (`unichat.workspaces`, mobile/api.js readWorkspaces + CRUD), chip
+  #ws-chip sur l'écran Chats → sheet de bascule, gestion dans Réglages,
+  appartenance via le menu ⋮ d'un service, filtrage du dock et de
+  l'écran Chats (l'écran Services montre tout). Pas de mise en veille
+  mobile (pas de vues persistantes) ni de synchro desktop ↔ mobile
+  (stockages indépendants).
 - **Hibernation (desktop, Réglages → Ressources)** : 0 (jamais, défaut) /
   5 / 15 / 30 / 60 min. Veilleuse 30 s dans le main : toute vue ni active,
   ni split, pas affichée depuis plus de X minutes → `hibernateView`

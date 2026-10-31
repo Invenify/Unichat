@@ -31,6 +31,107 @@ const SVG = {
 
 let services = [];
 let history = [];
+let workspaces = { active: 'all', list: [] }; // espace de travail actif
+
+// --- Espaces de travail (perso / pro) : filtrage du dock et de l'écran
+// Chats selon l'espace actif. L'écran Services montre tout (gestion). ---
+
+// Services visibles : actifs ET membres de l'espace actif ('all' = tous).
+function visibleServices() {
+  return services.filter((s) => {
+    if (!s.enabled) return false;
+    if (workspaces.active === 'all') return true;
+    const ws = workspaces.list.find((w) => w.id === workspaces.active);
+    return ws ? ws.services.includes(s.id) : false;
+  });
+}
+
+function updateWsChip() {
+  const chip = $('#ws-chip');
+  chip.classList.toggle('hidden', workspaces.list.length === 0);
+  const name =
+    workspaces.active === 'all'
+      ? t('allServices')
+      : (workspaces.list.find((w) => w.id === workspaces.active) || {}).name || t('allServices');
+  $('#ws-chip-name').textContent = name;
+  chip.title = `${t('workspacesSection')} : ${name}`;
+}
+
+// Applique un nouvel état des espaces partout : chip, dock, conversations.
+async function applyWorkspaceState(state, opts = {}) {
+  workspaces = state;
+  await reload();
+  updateWsChip();
+  renderWsSettingsList();
+  renderBattleServices();
+  if (opts.sheet) renderWsSheet();
+}
+
+// Sheet de bascule rapide (ouvert par la chip de l'écran Chats).
+function renderWsSheet() {
+  const body = $('#ws-sheet-body');
+  body.innerHTML = '';
+  const add = (label, active, action, danger) => {
+    const btn = document.createElement('button');
+    btn.className = 'ws-sheet-btn' + (active ? ' on' : '') + (danger ? ' danger' : '');
+    btn.textContent = label;
+    btn.addEventListener('click', async () => {
+      closeSheets();
+      await action();
+    });
+    body.appendChild(btn);
+  };
+  add(t('allServices'), workspaces.active === 'all', () => applyWorkspaceState(api.workspacesActivate('all')));
+  for (const ws of workspaces.list) {
+    add(ws.name, workspaces.active === ws.id, () => applyWorkspaceState(api.workspacesActivate(ws.id)));
+  }
+  add(t('manageWorkspaces'), false, () => showScreen('settings'));
+}
+
+$('#ws-chip').addEventListener('click', () => {
+  renderWsSheet();
+  openSheet('#sheet-workspaces');
+});
+
+// Réglages : liste des espaces (activer / supprimer) + création.
+function renderWsSettingsList() {
+  const listEl = $('#ws-settings-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  for (const ws of workspaces.list) {
+    const row = document.createElement('div');
+    row.className = 'ws-settings-row';
+    const name = document.createElement('button');
+    name.className = 'ws-name' + (workspaces.active === ws.id ? ' on' : '');
+    name.textContent = ws.name;
+    name.addEventListener('click', async () => {
+      await applyWorkspaceState(await api.workspacesActivate(ws.id));
+      toast(t('workspacesSection') + ' : ' + ws.name);
+    });
+    row.appendChild(name);
+    const del = document.createElement('button');
+    del.className = 'ws-del';
+    del.textContent = '×';
+    del.title = t('deleteWorkspace');
+    del.addEventListener('click', async () => {
+      await applyWorkspaceState(await api.workspacesDelete(ws.id));
+    });
+    row.appendChild(del);
+    listEl.appendChild(row);
+  }
+}
+
+$('#ws-create').addEventListener('click', async () => {
+  const name = $('#ws-new-name').value.trim();
+  if (!name) {
+    $('#ws-new-name').focus();
+    return;
+  }
+  // Le nouvel espace démarre avec les services actifs (visibles) actuels.
+  await applyWorkspaceState(await api.workspacesCreate(name, visibleServices().map((s) => s.id)));
+  $('#ws-new-name').value = '';
+  toast(t('workspaceCreated'));
+});
 
 // --- Logo d'un service : entrée du catalogue par origine, sinon champ du
 // service, sinon pastille de couleur d'accent (fallback).
@@ -124,8 +225,9 @@ function serviceEntries(svc, q) {
 function chatGroups(query) {
   const q = (query || '').trim().toLowerCase();
   const byService = new Map();
+  const visible = new Set(visibleServices().map((s) => s.id));
   for (const svc of services) {
-    if (!svc.enabled) continue;
+    if (!svc.enabled || !visible.has(svc.id)) continue;
     const entries = serviceEntries(svc, q);
     if (entries.length > 0) byService.set(svc.id, entries);
   }
@@ -281,7 +383,7 @@ function startRename(svc, entry) {
 
 function renderDock() {
   const dock = $('#quick-dock');
-  const active = services.filter((s) => s.enabled);
+  const active = visibleServices();
   dock.classList.toggle('hidden', active.length === 0);
   dock.innerHTML = '';
   for (const svc of active) {
@@ -445,19 +547,30 @@ function domainOf(url) {
 }
 
 function serviceMenu(svc) {
-  openMenu(svc.name, [
+  const items = [
     { label: t('mobileOpen'), action: () => openWebView(svc, svc.url) },
     { label: svc.enabled ? t('mobileDisable') : t('mobileEnable'), action: async () => {
       await api.updateService(svc.id, { enabled: !svc.enabled });
       await reload();
     } },
-    { label: t('mobileDelete'), danger: true, action: () =>
-      openMenu(svc.name, [
-        { label: t('removeDeleteSession'), danger: true, action: () => removeService(svc, true) },
-        { label: t('mobileDeleteKeepSession'), action: () => removeService(svc, false) },
-        { label: t('cancel'), action: () => {} },
-      ]) },
-  ]);
+  ];
+  // Appartenance aux espaces (✓ = membre) : un item par espace.
+  for (const ws of workspaces.list) {
+    const member = ws.services.includes(svc.id);
+    items.push({
+      label: (member ? '✓ ' : '') + ws.name,
+      action: async () => {
+        await applyWorkspaceState(await api.workspacesToggleService(ws.id, svc.id, !member));
+      },
+    });
+  }
+  items.push({ label: t('mobileDelete'), danger: true, action: () =>
+    openMenu(svc.name, [
+      { label: t('removeDeleteSession'), danger: true, action: () => removeService(svc, true) },
+      { label: t('mobileDeleteKeepSession'), action: () => removeService(svc, false) },
+      { label: t('cancel'), action: () => {} },
+    ]) });
+  openMenu(svc.name, items);
 }
 
 async function removeService(svc, dropSession) {
@@ -655,7 +768,7 @@ function renderBattleChips() {
 function renderBattleServices() {
   const listEl = $('#battle-svc-list');
   listEl.innerHTML = '';
-  for (const svc of services.filter((s) => s.enabled)) {
+  for (const svc of visibleServices()) {
     const on = battleSel.has(svc.id);
     const btn = document.createElement('button');
     btn.className = 'cat-entry battle-svc' + (on ? ' selected' : '');
@@ -678,7 +791,7 @@ function renderBattleServices() {
 
 function openBattleSheet() {
   $('#battle-text').value = localStorage.getItem(RELAY_KEY) || '';
-  battleSel = new Set(services.filter((s) => s.enabled).map((s) => s.id));
+  battleSel = new Set(visibleServices().map((s) => s.id));
   renderBattleChips();
   renderBattleServices();
   openSheet('#sheet-battle');
@@ -807,9 +920,12 @@ async function reload() {
   await api.purgeOldHistory(); // rétention « Historique » (0 = illimité)
   services = await api.getServices();
   history = await api.getHistory();
+  workspaces = await api.getWorkspaces();
   renderChats();
   renderServices();
   renderDock();
+  updateWsChip();
+  renderWsSettingsList();
 }
 
 $('#search').addEventListener('input', renderChats);
@@ -832,6 +948,8 @@ function escapeHtml(s) {
   document.querySelectorAll('#lang-row .lang-opt').forEach((b) => {
     b.classList.toggle('on', b.dataset.lang === langSetting);
   });
+  workspaces = await api.getWorkspaces();
+  updateWsChip();
   const retention = await api.getRetention();
   document.querySelectorAll('#retention-row .retention-opt').forEach((b) => {
     b.classList.toggle('on', parseInt(b.dataset.days, 10) === retention);

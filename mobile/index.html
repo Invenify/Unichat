@@ -17,6 +17,12 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </header>
+    <!-- Sélecteur d'espace (perso / pro) : caché sans espace -->
+    <button id="ws-chip" class="ws-chip hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span id="ws-chip-name"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input id="search" type="search" data-i18n-placeholder="searchPlaceholder" autocomplete="off">
@@ -69,6 +75,12 @@
         <button class="lang-opt retention-opt" data-days="90" data-i18n="retention90"></button>
         <button class="lang-opt retention-opt" data-days="365" data-i18n="retention365"></button>
       </div>
+      <h2 class="settings-h" data-i18n="workspacesSection"></h2>
+      <div class="ws-new-row">
+        <input id="ws-new-name" type="text" data-i18n-placeholder="workspaceNamePh">
+        <button id="ws-create" class="settings-btn" data-i18n="createWorkspace"></button>
+      </div>
+      <div id="ws-settings-list"></div>
       <h2 class="settings-h" data-i18n="settingsRegistrySection"></h2>
       <button id="export-registry" class="settings-btn" data-i18n="registryExport"></button>
       <button id="import-registry" class="settings-btn" data-i18n="registryImport"></button>
@@ -168,6 +180,13 @@
   <div id="sheet-menu" class="sheet hidden" role="dialog" aria-modal="true">
     <div class="sheet-grab"></div>
     <div id="menu-body" class="sheet-body menu-body"></div>
+  </div>
+
+  <!-- Espaces de travail : bascule rapide depuis la chip de l'écran Chats -->
+  <div id="sheet-workspaces" class="sheet hidden" role="dialog" aria-modal="true">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head"><h2 data-i18n="workspacesSection"></h2></div>
+    <div id="ws-sheet-body" class="sheet-body"></div>
   </div>
 
   <!-- Battle d'IA : prompt saisi dans UniChat, copié vers le presse-papiers

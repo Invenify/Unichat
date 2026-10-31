@@ -8,8 +8,26 @@ import { isChatUrl, cleanTitle, resolveTitle } from '../src/shared/title-rules.j
 import { mkService, importable } from '../src/shared/service.js';
 import { list as catalogList, find as catalogFind, sameOrigin } from '../src/shared/catalog.js';
 
-const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang', retention: 'unichat.retention' };
+const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang', retention: 'unichat.retention', workspaces: 'unichat.workspaces' };
 const RETENTION_DAYS = [0, 30, 90, 365];
+
+// Espaces de travail : même forme que le desktop (src/main/workspaces.js),
+// dans localStorage. L'espace 'all' (tous les services actifs) est implicite.
+function readWorkspaces() {
+  try {
+    const v = JSON.parse(localStorage.getItem(K.workspaces));
+    if (v && typeof v === 'object' && Array.isArray(v.list)) {
+      const list = v.list.filter(
+        (w) => w && typeof w.id === 'string' && typeof w.name === 'string' && Array.isArray(w.services)
+      );
+      const active = typeof v.active === 'string' && (v.active === 'all' || list.some((w) => w.id === v.active)) ? v.active : 'all';
+      return { active, list };
+    }
+  } catch {
+    // stockage corrompu : repart à vide
+  }
+  return { active: 'all', list: [] };
+}
 
 function read(key, fallback) {
   try {
@@ -195,6 +213,54 @@ export const api = {
     const n = history.length - kept.length;
     if (n > 0) write(K.history, kept);
     return n;
+  },
+
+  // --- Espaces de travail (perso / pro) ---
+
+  async getWorkspaces() {
+    return readWorkspaces();
+  },
+
+  async workspacesActivate(id) {
+    const w = readWorkspaces();
+    w.active = id === 'all' || w.list.some((x) => x.id === id) ? id : 'all';
+    write(K.workspaces, w);
+    return w;
+  },
+
+  async workspacesCreate(name, serviceIds) {
+    const w = readWorkspaces();
+    const ws = {
+      id: 'ws-' + Math.random().toString(16).slice(2, 10),
+      name: String(name || 'Espace').slice(0, 40),
+      services: (Array.isArray(serviceIds) ? serviceIds : []).filter((id) => typeof id === 'string'),
+    };
+    w.list.push(ws);
+    w.active = ws.id;
+    write(K.workspaces, w);
+    return w;
+  },
+
+  async workspacesDelete(id) {
+    const w = readWorkspaces();
+    w.list = w.list.filter((x) => x.id !== id);
+    if (w.active === id) w.active = 'all';
+    write(K.workspaces, w);
+    return w;
+  },
+
+  async workspacesToggleService(wsId, serviceId, member) {
+    const w = readWorkspaces();
+    const ws = w.list.find((x) => x.id === wsId);
+    if (ws) {
+      if (member === true) {
+        if (!ws.services.includes(serviceId)) ws.services.push(serviceId);
+      } else {
+        ws.services = ws.services.filter((s) => s !== serviceId);
+      }
+      write(K.workspaces, w);
+    }
+    return w;
   },
 
   // --- Métadonnées d'une URL (phase 6 : fetch natif, pas de CORS) ---

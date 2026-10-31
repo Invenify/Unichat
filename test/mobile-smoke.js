@@ -109,6 +109,21 @@ const check = (label, cond) => {
   await api.setRetention(0);
   check('rétention 0 = illimité (no-op)', (await api.purgeOldHistory()) === 0);
 
+  // Espaces de travail (identiques au desktop, dans localStorage)
+  check('workspaces vides au départ', (await api.getWorkspaces()).active === 'all');
+  const w1 = await api.workspacesCreate('Pro', ['svc-1']);
+  check('workspaces create → actif', w1.active === w1.list[0].id && w1.list[0].name === 'Pro');
+  await api.workspacesToggleService(w1.list[0].id, 'svc-2', true);
+  const w2 = await api.getWorkspaces();
+  check('workspaces toggle service', w2.list[0].services.includes('svc-2'));
+  await api.workspacesActivate('all');
+  check('workspaces activate all', (await api.getWorkspaces()).active === 'all');
+  await api.workspacesActivate(w2.list[0].id);
+  check('workspaces activate espace', (await api.getWorkspaces()).active === w2.list[0].id);
+  await api.workspacesDelete(w2.list[0].id);
+  const w3 = await api.getWorkspaces();
+  check('workspaces delete → retour all', w3.active === 'all' && w3.list.length === 0);
+
   // Thème
   check('thème défaut system', (await api.getTheme()) === 'system');
   check('setTheme dark', (await api.setTheme('dark')) === 'dark');

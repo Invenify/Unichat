@@ -160,6 +160,43 @@ const { window } = dom;
   $('#webview-back').dispatchEvent(new window.Event('click', { bubbles: true }));
   check('vue fermée après le battle', !visible('#webview-holder'));
 
+  // Espaces de travail : chip cachée sans espace, création via Réglages,
+  // bascule via la chip, filtrage du dock, appartenance via le menu ⋮.
+  window.localStorage.removeItem('unichat.workspaces');
+  $('.nav-btn[data-screen="settings"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('chip cachée sans espace', $('#ws-chip').classList.contains('hidden'));
+
+  $('#ws-new-name').value = 'Pro';
+  $('#ws-create').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 40));
+  const wsState = JSON.parse(window.localStorage.getItem('unichat.workspaces'));
+  check('espace créé avec les services actifs', wsState.list[0].name === 'Pro' && wsState.list[0].services.length === 2);
+  check('chip visible et active sur Pro', !$('#ws-chip').classList.contains('hidden') && $('#ws-chip-name').textContent === 'Pro');
+  check('dock filtré par l\u2019espace (2 services membres)', doc.querySelectorAll('.dock-btn').length === 2);
+
+  // Retrait d'un service via le menu ⋮ → dock filtré.
+  $('.nav-btn[data-screen="services"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  doc.querySelector('.svc-row .svc-more').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  const wsItem = [...doc.querySelectorAll('#menu-body button')].find((b) => b.textContent.includes('Pro'));
+  check('item d\u2019espace dans le menu ⋮', !!wsItem);
+  wsItem.dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 40));
+  const wsAfter = JSON.parse(window.localStorage.getItem('unichat.workspaces'));
+  check('appartenance retirée', !wsAfter.list[0].services.includes(JSON.parse(window.localStorage.getItem('unichat.services'))[0].id));
+
+  // Bascule « Tous les services » via la chip.
+  $('.nav-btn[data-screen="chats"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  $('#ws-chip').dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 20));
+  check('sheet des espaces ouverte', visible('#sheet-workspaces'));
+  const allBtn = [...doc.querySelectorAll('#ws-sheet-body button')].find((b) => b.textContent === 'Tous les services');
+  allBtn.dispatchEvent(new window.Event('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 40));
+  check('bascule → tous les services', JSON.parse(window.localStorage.getItem('unichat.workspaces')).active === 'all' && $('#ws-chip-name').textContent === 'Tous les services');
+
   console.log(failures === 0 ? 'ALL DOM TESTS PASSED' : failures + ' FAILURES');
   process.exit(failures === 0 ? 0 : 1);
 })().catch((e) => {
