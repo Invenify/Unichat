@@ -1,6 +1,6 @@
 {
   "name": "unichat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tous vos chats IA dans une seule interface — desktop (Electron) et Android (Capacitor).",
   "main": "src/main/main.js",
   "author": "Hugo",

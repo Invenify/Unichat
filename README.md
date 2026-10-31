@@ -1,16 +1,15 @@
 <p align="center">
-  <img src="build/icon.png" width="160" alt="Logo UniChat — licorne qui parle" />
+  <img src="build/icon.png" width="160" alt="UniChat logo — talking unicorn" />
 </p>
 
 <h1 align="center">UniChat</h1>
 
 <p align="center">
-  <strong>Tous vos chats IA dans une seule interface.</strong><br/>
-  <em>All your AI chats in a single app.</em>
+  <strong>All your AI chats in a single app.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Invenify/Unichat/releases"><img alt="version" src="https://img.shields.io/badge/version-0.1.0-blue" /></a>
+  <img alt="version" src="https://img.shields.io/badge/version-0.2.0-blue" />
   <img alt="licence" src="https://img.shields.io/badge/license-MIT-green" />
   <img alt="Electron" src="https://img.shields.io/badge/Electron-30-47848F?logo=electron&logoColor=white" />
   <img alt="Capacitor" src="https://img.shields.io/badge/Capacitor-8-119EFF?logo=capacitor&logoColor=white" />
@@ -18,150 +17,21 @@
 </p>
 
 <p align="center">
-  <a href="#français">Français</a> &nbsp;·&nbsp;
-  <a href="#english">English</a>
+  <strong>English</strong> &nbsp;·&nbsp;
+  <a href="README.fr.md">Français</a> &nbsp;·&nbsp;
+  <a href="README.de.md">Deutsch</a> &nbsp;·&nbsp;
+  <a href="README.es.md">Español</a> &nbsp;·&nbsp;
+  <a href="README.it.md">Italiano</a>
 </p>
 
 <p align="center">
-  <strong>Téléchargez l'application :</strong>
-  <a href="https://github.com/Invenify/Unichat/releases/tag/0.1.0">Release 0.1.0</a>
-  &nbsp;·&nbsp;
-  <strong>Download the app:</strong>
-  <a href="https://github.com/Invenify/Unichat/releases/tag/0.1.0">Release 0.1.0</a>
+  <strong>Download:</strong>
+  <a href="https://github.com/Invenify/Unichat/releases">Releases</a>
 </p>
 
 ---
 
-## Français
-
-### Le concept
-
-Vous utilisez ChatGPT, Claude, Gemini, Le Chat, Copilot… chacun dans son
-onglet, sa fenêtre, son application. **UniChat les réunit tous dans une seule
-interface** : chaque service s'ouvre dans sa propre vue (session conservée),
-et toutes vos conversations remontent dans une sidebar unique.
-
-La règle d'or du projet : **aucun code spécifique à un service**. Un chat IA
-inconnu demain ? Collez son URL, il fonctionne immédiatement.
-
-### Télécharger
-
-Binaires prêts à installer sur la [release 0.1.0](https://github.com/Invenify/Unichat/releases/tag/0.1.0) :
-
-| Plateforme | Fichier |
-|---|---|
-| Windows x64 | `UniChat Setup 0.1.0.exe` |
-| Linux x64 | `UniChat-0.1.0.AppImage` |
-| macOS arm64 | `UniChat-0.1.0-arm64-mac.zip` (non signé : clic droit → Ouvrir au premier lancement) |
-| Android | `UniChat-0.1.0.apk` (build debug : autoriser les sources inconnues) |
-
-### Fonctionnalités
-
-| | Fonctionnalité |
-|---|---|
-| **Registre dynamique** | Collez l'URL d'un chat IA : l'app récupère automatiquement son nom, son logo (favicon) et ses couleurs (theme-color, manifest). Tout est modifiable avant enregistrement. |
-| **Moteur de titres universel** | À chaque navigation, l'app enregistre `{service, url, titre de la page, date}`. La sidebar est construite à partir de cet historique — aucun sélecteur CSS à maintenir, le titre de la page EST le titre du chat. |
-| **Catalogue intégré** | 20 services connus (ChatGPT, Claude, Gemini, Copilot, Duck.ai, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) proposés au premier lancement, activables/désactivables à tout moment (session et historique conservés). |
-| **Relais & battle d'IA** | Saisissez le prompt dans UniChat (Ctrl/Cmd+P), choisissez une IA (relais) ou plusieurs (battle). Pour chaque IA : le prompt est **collé puis envoyé automatiquement** (Entrée simulé), et dès que l'IA crée la conversation, la suivante prend le relais — zéro action humaine. Repli 10 s + bouton ▶ si une IA résiste. Bibliothèque de prompts mémorisés. Zéro sélecteur de site, le prompt n'est jamais lu depuis les pages. |
-| **Écran partagé (desktop)** | Deux IA côte à côte (Ctrl/Cmd+E, puis Ctrl/clic sur un service pour la moitié droite) : comparez les réponses sans basculer. |
-| **Sidebar (desktop)** | Réductible à un rail d'icônes (Ctrl/Cmd+B, état mémorisé), thème clair/sombre suivant l'OS. |
-| **Finitions** | Édition d'un service (nom, couleurs, logo, URL, exclusions), suppression avec session conservable ou déconnectée, barre d'adresse, export/import du registre en JSON (fusion par URL). |
-| **Ordre libre des services** | Glissez les en-têtes de la sidebar (desktop) ou le dock (mobile, appui long) pour ranger vos IA — Euria et Euria Pro côte à côte. L'ordre pilote aussi les raccourcis `Ctrl/Cmd+1…9`. |
-| **Multi-comptes** | Dupliquez un service (✎ → « Dupliquer ») : connexion totalement indépendante (Le Chat perso + pro). |
-| **Profil multi-appareil** | Exportez vers un fichier JSON (`unichat-profile.json`) vos services, espaces, réglages et historique — **jamais les sessions**. Partage Android sur mobile, dialogues natifs sur desktop. Import qui fusionne sans rien écraser, ids remappés par URL. |
-| **Espaces de travail** | Perso, pro, études… : chaque espace est un sous-ensemble de vos services — **bascule rapide par la chip** (sidebar desktop, écran Chats mobile) ; la palette, le relais, le dock et `Ctrl/Cmd+1…9` suivent l'espace actif, et les IA hors espace sont mises en veille (desktop). Création et gestion dans les Réglages, appartenance via le ✎ du service (desktop) ou le menu ⋮ (mobile). |
-| **Ressources** | Réglage « hibernation » : les IA non affichées depuis X minutes sont mises en veille (mémoire libérée), réveillées au clic sur leur dernière page — session conservée. Jamais pendant un battle. |
-| **Réglages & langues** | Menu Réglages (⚙ ou `Ctrl/Cmd+,`) : thème, **langue de l'interface** (français, anglais, allemand, espagnol, italien — suit la langue du système par défaut), **bloque-pisteurs** dans les vues (desktop), **rétention de l'historique** (illimité / 30 jours / 90 jours / 1 an), gestion des services, export/import du registre. Desktop et mobile. |
-| **Palette universelle** | `Ctrl/Cmd+Tab` : cherchez une conversation parmi tous les services (ou un service par son nom) et y aller d'une touche — plus besoin de se souvenir de « sur quel site » vit un chat. |
-| **Raccourcis** | `Ctrl/Cmd+1…9` service, `+K` chercher, `+P` relais/battle, `+N` nouveau chat, `+Tab` palette, `+E` écran partagé, `+B` sidebar, `+,` réglages, `+/` la liste des raccourcis — et `Ctrl/Cmd+Alt+U`, **raccourci système** : UniChat surgit par-dessus toute application, palette ouverte. **Joindre un fichier** au prompt (texte, 128 Ko) dans le relais, desktop et mobile. |
-| **Thème** | Clair/sombre, suit l'OS en temps réel (les WebViews suivent). |
-
-### Démarrage rapide
-
-```bash
-npm install
-npm start
-```
-
-| Commande | Description |
-|---|---|
-| `npm start` | Lancer l'app desktop (Electron) |
-| `npm test` | Smoke tests desktop + mobile (moteur de titres, registre, DOM) |
-| `npm run icon` | Régénérer le logo « licorne qui parle » (`build/icon.png`) |
-| `npm run dist:linux` | Packaging AppImage Linux |
-| `npm run dist:win` | Packaging NSIS Windows x64 |
-| `npm run dist:mac` | Packaging DMG Mac arm64 |
-
-### Android (Capacitor)
-
-L'UI mobile vit dans `mobile/` (HTML/CSS/JS, mêmes tokens de thème que le
-desktop) et consomme les mêmes modules `src/shared/`. Trois écrans
-(Chats / Services / Réglages), navigation basse, bottom-sheets, thème suivant
-l'OS ou forcé. `mobile/api.js` isole le stockage (localStorage aujourd'hui,
-APIs natives ensuite).
-
-```bash
-npm run mobile         # esbuild : mobile/ -> www/ (bundle + logos)
-npm run mobile:sync    # build + copie dans le projet android/
-npm run mobile:open    # ouvrir android/ dans Android Studio
-```
-
-### Architecture
-
-```
-src/
-├── shared/                # Code portable desktop + Android (zéro API Node/Electron)
-│   ├── title-rules.js     # isChatUrl, cleanTitle — le cœur du moteur de titres
-│   ├── catalog.js         # Catalogue déclaratif des chats IA connus
-│   └── service.js         # Modèle d'un service + fusion par URL (import/export)
-├── main/
-│   ├── main.js            # Fenêtre, WebContentsView par service, IPC
-│   ├── registry.js        # Registre de services (services.json)
-│   ├── metadata.js        # Analyse auto d'une URL : favicon, couleurs, titre
-│   └── settings.js        # Préférences de l'app
-├── preload/preload.js     # Pont IPC
-├── renderer/              # UI desktop (sidebar, wizard, catalogue)
-├── engine/
-│   ├── title-tracker.js   # did-navigate / page-title-updated -> historique
-│   └── conv-store.js      # Historique local (history.json, 100 % local)
-└── recipes/               # OPTIONNEL : sélecteurs par service (non-lus)
-```
-
-### Données et vie privée (100 % local)
-
-| Fichier | Contenu |
-|---|---|
-| `userData/services.json` | Registre des services (id, nom, url, couleurs, logo, enabled) |
-| `userData/history.json` | Historique des chats visités, dédoublonné par (service, url) |
-| Partitions `persist:<id>` | Sessions/cookies par service, conservées entre lancements |
-
-Aucun envoi réseau autre que vers les services eux-mêmes. Pour un service
-chiffré de bout en bout (Lumo), UniChat ne capture que le titre affiché à
-l'écran, sur votre appareil.
-
-### Recettes optionnelles
-
-Le moteur de titres ne donne ni les non-lus ni les conversations jamais
-ouvertes. Pour cela, déposez `recipes/<domaine>.json` :
-
-```json
-{
-  "listSelector": "...",
-  "itemSelector": "...",
-  "titleSelector": "...",
-  "linkSelector": "...",
-  "unreadSelector": "..."
-}
-```
-
-L'app fonctionne toujours sans recette ; les sélecteurs se trouvent à la main
-via F12 (ne jamais les inventer).
-
----
-
-## English
-
-### The concept
+## The concept
 
 You use ChatGPT, Claude, Gemini, Le Chat, Copilot… each in its own tab,
 window, or app. **UniChat brings them all into a single interface**: every
@@ -171,29 +41,38 @@ surface in one unified sidebar.
 The project's golden rule: **zero service-specific code**. An unknown AI chat
 shows up tomorrow? Paste its URL, it just works.
 
-### Download
+## Download
 
-Ready-to-install binaries on [release 0.1.0](https://github.com/Invenify/Unichat/releases/tag/0.1.0):
+Ready-to-install binaries on the [releases page](https://github.com/Invenify/Unichat/releases):
 
 | Platform | File |
 |---|---|
-| Windows x64 | `UniChat Setup 0.1.0.exe` |
-| Linux x64 | `UniChat-0.1.0.AppImage` |
-| macOS arm64 | `UniChat-0.1.0-arm64-mac.zip` (unsigned: right-click → Open on first launch) |
-| Android | `UniChat-0.1.0.apk` (debug build: allow unknown sources) |
+| Windows x64 | `UniChat Setup 0.2.0.exe` |
+| Linux x64 | `UniChat-0.2.0.AppImage` |
+| macOS arm64 | `UniChat-0.2.0-arm64-mac.zip` (unsigned: right-click → Open on first launch) |
+| Android | `UniChat-0.2.0.apk` (debug build: allow unknown sources) |
 
-### Features
+## Features
 
 | | Feature |
 |---|---|
 | **Dynamic registry** | Paste an AI chat URL: the app automatically fetches its name, logo (favicon) and colors (theme-color, manifest) — all editable before saving. |
 | **Universal title engine** | On every navigation the app records `{service, url, page title, date}`. The sidebar is built from this history — no CSS selector to maintain, the page title IS the chat title. |
-| **Built-in catalog** | 19 known services (ChatGPT, Claude, Gemini, Copilot, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) offered on first launch, toggleable anytime (session and history preserved). |
-| **Finishing touches** | Service editing (name, colors, logo, URL, exclusions), removal with session kept or wiped, address bar, JSON registry export/import (merged by URL). |
-| **Shortcuts** | `Ctrl/Cmd+1…9` to switch services, `Ctrl/Cmd+K` to search a conversation. |
+| **Built-in catalog** | 20 known services (ChatGPT, Claude, Gemini, Copilot, Duck.ai, Perplexity, Le Chat, Grok, DeepSeek, Euria, Lumo, Poe, Qwen, Kimi…) offered on first launch, toggleable anytime (session and history preserved). |
+| **Relay & AI battle** | Type your prompt in UniChat (`Ctrl/Cmd+P`), pick one AI (relay) or several (battle). For each AI the prompt is **pasted then sent automatically** (simulated Enter), and as soon as the AI starts the conversation, the next one takes over — zero human action. 10 s fallback + ▶ button if an AI resists. Saved-prompt library. Zero site selectors; the prompt is never read from the pages. |
+| **Split view (desktop)** | Two AIs side by side (`Ctrl/Cmd+E`, then Ctrl+click a service for the right half): compare answers without switching. |
+| **Workspaces** | Personal, work, study…: each workspace is a subset of your services — **fast switching via the chip** (desktop sidebar, mobile Chats screen); the palette, relay, dock and `Ctrl/Cmd+1…9` follow the active workspace, and out-of-workspace AIs are put to sleep (desktop). Creation and management in Settings; membership via the service's ✎ (desktop) or ⋮ menu (mobile). |
+| **Multi-accounts** | Duplicate a service (✎ → “Duplicate”): fully independent login (Le Chat personal + work). |
+| **Free service ordering** | Drag the sidebar headers (desktop) or the dock (mobile, long-press) to arrange your AIs — Euria and Euria Pro side by side. The order also drives the `Ctrl/Cmd+1…9` shortcuts. |
+| **Universal palette** | `Ctrl/Cmd+Tab`: search a conversation across all services (or a service by name) and jump to it in one keystroke — no need to remember which site a chat lives on. |
+| **Multi-device profile** | Export your services, workspaces, settings and history to a JSON file (`unichat-profile.json`) — **never your sessions**. Android share sheet on mobile, native dialogs on desktop. Import merges without overwriting anything; ids are remapped by URL. |
+| **Resources** | “Hibernate” setting: AIs not shown for X minutes are put to sleep (memory freed), woken on click on their last page — session kept. Never during a battle. |
+| **Settings & languages** | Settings menu (⚙ or `Ctrl/Cmd+,`): theme, **interface language** (French, English, German, Spanish, Italian — follows the system language by default), **tracker blocker** in the views (desktop), **history retention** (unlimited / 30 days / 90 days / 1 year), service management, registry export/import. Desktop and mobile. |
+| **Shortcuts** | `Ctrl/Cmd+1…9` service, `+K` search, `+P` relay/battle, `+N` new chat, `+Tab` palette, `+E` split view, `+B` sidebar, `+,` settings, `+/` the shortcut list — and `Ctrl/Cmd+Alt+U`, a **system-wide shortcut**: UniChat pops above any application, palette open. **Attach a file** to the prompt (text, 128 KB) in the relay, desktop and mobile. |
 | **Theme** | Light/dark, follows the OS live (WebViews follow too). |
+| **Finishing touches** | Service editing (name, colors, logo, URL, exclusions), removal with session kept or wiped, address bar, JSON registry export/import (merged by URL). |
 
-### Quick start
+## Quick start
 
 ```bash
 npm install
@@ -209,7 +88,7 @@ npm start
 | `npm run dist:win` | Package Windows NSIS x64 |
 | `npm run dist:mac` | Package macOS DMG arm64 |
 
-### Android (Capacitor)
+## Android (Capacitor)
 
 The mobile UI lives in `mobile/` (HTML/CSS/JS, same theme tokens as desktop)
 and consumes the same `src/shared/` modules. Three screens (Chats / Services /
@@ -222,40 +101,46 @@ npm run mobile:sync    # build + copy into the android/ project
 npm run mobile:open    # open android/ in Android Studio
 ```
 
-### Architecture
+## Architecture
 
 ```
 src/
 ├── shared/                # Portable code, desktop + Android (zero Node/Electron APIs)
-│   ├── title-rules.js     # isChatUrl, cleanTitle — the heart of the title engine
+│   ├── title-rules.js     # Title engine rules (isChatUrl, cleanTitle, resolveTitle)
 │   ├── catalog.js         # Declarative catalog of known AI chats
-│   └── service.js         # Service model + URL-based merge (import/export)
+│   ├── service.js         # Service model + URL-based merge (import/export)
+│   ├── i18n.js            # UI dictionary (fr/en/de/es/it)
+│   ├── profile.js         # Multi-device profile: schema + merge, id remapping
+│   └── trackers.js        # Conservative tracker/ad domain list
 ├── main/
 │   ├── main.js            # Window, one WebContentsView per service, IPC
 │   ├── registry.js        # Service registry (services.json)
+│   ├── workspaces.js      # Workspaces, named subsets of services
 │   ├── metadata.js        # Auto URL analysis: favicon, colors, title
-│   └── settings.js        # App preferences
-├── preload/preload.js     # IPC bridge
-├── renderer/              # Desktop UI (sidebar, wizard, catalog)
+│   └── settings.js        # App preferences (settings.json)
+├── preload/preload.js     # IPC bridge (i18n exposed here)
+├── renderer/              # Desktop UI (sidebar, wizard, settings, palette)
 ├── engine/
 │   ├── title-tracker.js   # did-navigate / page-title-updated -> history
 │   └── conv-store.js      # Local history (history.json, 100% local)
 └── recipes/               # OPTIONAL: per-service selectors (never read by default)
 ```
 
-### Data & privacy (100% local)
+## Data & privacy (100% local)
 
 | File | Content |
 |---|---|
 | `userData/services.json` | Service registry (id, name, url, colors, logo, enabled) |
 | `userData/history.json` | Visited chat history, deduplicated by (service, url) |
+| `userData/workspaces.json` | Workspaces (named subsets of services) |
+| `userData/settings.json` | App preferences |
 | `persist:<id>` partitions | Per-service sessions/cookies, kept across launches |
 
 No network traffic other than to the services themselves. For an end-to-end
 encrypted service (Lumo), UniChat only captures the on-screen title, on your
-device.
+device. Sessions are never part of an exported profile.
 
-### Optional recipes
+## Optional recipes
 
 The title engine provides neither unread counts nor never-opened
 conversations. For those, drop a `recipes/<domain>.json`:
