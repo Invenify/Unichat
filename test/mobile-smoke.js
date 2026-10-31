@@ -124,6 +124,26 @@ const check = (label, cond) => {
   const w3 = await api.getWorkspaces();
   check('workspaces delete → retour all', w3.active === 'all' && w3.list.length === 0);
 
+  // Profil multi-appareil : export/import au format partagé
+  const exported = await api.exportProfile();
+  check('profile : export au format v1', exported.version === 1 && Array.isArray(exported.services));
+  const stats = await api.importProfile({
+    version: 1,
+    services: [{ id: 'svc-x', name: 'Qwen', url: 'https://chat.qwen.ai', accent: '#615ced' }],
+    workspaces: [],
+    settings: { theme: 'dark', language: 'fr' },
+    history: [{ serviceId: 'svc-x', url: 'https://chat.qwen.ai/c/1', title: 'Chat Qwen', timestamp: Date.now() }],
+  });
+  check('profile : import ajoute service + historique', stats && stats.servicesAdded === 1 && stats.historyMerged === 1);
+  check('profile : historique remappé sur le nouvel id', (await api.getHistory()).some((e) => e.title === 'Chat Qwen'));
+  check('profile : réglage importé', (await api.getTheme()) === 'dark');
+  check('profile : import invalide → null', (await api.importProfile({ foo: 1 })) === null);
+  // État restauré pour les assertions suivantes (thème, purge).
+  await api.setTheme('system');
+  const qwenSvc = (await api.getServices()).find((s) => s.url === 'https://chat.qwen.ai');
+  await api.removeService(qwenSvc.id);
+  await api.removeServiceHistory(qwenSvc.id);
+
   // Thème
   check('thème défaut system', (await api.getTheme()) === 'system');
   check('setTheme dark', (await api.setTheme('dark')) === 'dark');

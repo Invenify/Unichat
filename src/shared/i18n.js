@@ -150,6 +150,13 @@ const DICT = {
     workspaceCreated: "Espace créé et activé.",
     manageWorkspaces: "Gérer les espaces…",
     createWorkspace: "Créer",
+    profileSection: "Profil",
+    profileExport: "Exporter le profil…",
+    profileImport: "Importer un profil…",
+    profileExported: "Profil exporté.",
+    profileInvalid: "Fichier de profil invalide.",
+    profileHint: "Profil multi-appareil : services, espaces, réglages et historique (jamais les sessions). L'import fusionne sans rien écraser.",
+    profileImported: "Profil importé : {services} service(s) ajouté(s), {history} conversation(s) fusionnée(s).",
   },
 
   en: {
@@ -299,6 +306,13 @@ const DICT = {
     workspaceCreated: "Workspace created and activated.",
     manageWorkspaces: "Manage workspaces…",
     createWorkspace: "Create",
+    profileSection: "Profile",
+    profileExport: "Export profile…",
+    profileImport: "Import profile…",
+    profileExported: "Profile exported.",
+    profileInvalid: "Invalid profile file.",
+    profileHint: "Multi-device profile: services, workspaces, settings and history (never sessions). Importing merges without overwriting.",
+    profileImported: "Profile imported: {services} service(s) added, {history} conversation(s) merged.",
   },
 
   de: {
@@ -448,6 +462,13 @@ const DICT = {
     workspaceCreated: "Arbeitsbereich erstellt und aktiviert.",
     manageWorkspaces: "Arbeitsbereiche verwalten…",
     createWorkspace: "Erstellen",
+    profileSection: "Profil",
+    profileExport: "Profil exportieren…",
+    profileImport: "Profil importieren…",
+    profileExported: "Profil exportiert.",
+    profileInvalid: "Ungültige Profildatei.",
+    profileHint: "Geräteübergreifendes Profil: Dienste, Arbeitsbereiche, Einstellungen und Verlauf (nie Sitzungen). Der Import überschreibt nichts.",
+    profileImported: "Profil importiert: {services} Dienst(e) hinzugefügt, {history} Unterhaltung(en) zusammengeführt.",
   },
 
   es: {
@@ -597,6 +618,13 @@ const DICT = {
     workspaceCreated: "Espacio creado y activado.",
     manageWorkspaces: "Gestionar espacios…",
     createWorkspace: "Crear",
+    profileSection: "Perfil",
+    profileExport: "Exportar perfil…",
+    profileImport: "Importar perfil…",
+    profileExported: "Perfil exportado.",
+    profileInvalid: "Archivo de perfil no válido.",
+    profileHint: "Perfil multidispositivo: servicios, espacios, ajustes e historial (nunca las sesiones). La importación fusiona sin sobrescribir.",
+    profileImported: "Perfil importado: {services} servicio(s) añadido(s), {history} conversación(es) fusionada(s).",
   },
 
   it: {
@@ -746,6 +774,13 @@ const DICT = {
     workspaceCreated: "Area creata e attivata.",
     manageWorkspaces: "Gestisci le aree…",
     createWorkspace: "Crea",
+    profileSection: "Profilo",
+    profileExport: "Esporta profilo…",
+    profileImport: "Importa profilo…",
+    profileExported: "Profilo esportato.",
+    profileInvalid: "File di profilo non valido.",
+    profileHint: "Profilo multi-dispositivo: servizi, aree, impostazioni e cronologia (mai le sessioni). L'importazione unisce senza sovrascrivere.",
+    profileImported: "Profilo importato: {services} servizio/i aggiunto/i, {history} conversazione/i unite.",
   },
 };
 

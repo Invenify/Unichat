@@ -103,4 +103,23 @@ function visibleServices(services) {
   return enabled.filter((s) => ids.has(s.id));
 }
 
-module.exports = { init, get, activate, create, remove, toggleService, visibleServices };
+// Fusion d'un profil importé (multi-appareil) : par nom, union des membres.
+// Les serviceIds entrants sont déjà remappés par src/shared/profile.js.
+function mergeIn(list) {
+  for (const inc of Array.isArray(list) ? list : []) {
+    if (!inc || typeof inc.name !== 'string' || !inc.name) continue;
+    const members = (Array.isArray(inc.services) ? inc.services : []).filter((id) => typeof id === 'string');
+    const existing = data.list.find((w) => w.name === inc.name);
+    if (existing) {
+      for (const id of members) {
+        if (!existing.services.includes(id)) existing.services.push(id);
+      }
+    } else {
+      data.list.push({ id: newId(), name: inc.name.slice(0, 40), services: [...new Set(members)] });
+    }
+  }
+  save();
+  return get();
+}
+
+module.exports = { init, get, activate, create, remove, toggleService, visibleServices, mergeIn };

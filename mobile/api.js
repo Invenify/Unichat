@@ -7,6 +7,7 @@
 import { isChatUrl, cleanTitle, resolveTitle } from '../src/shared/title-rules.js';
 import { mkService, importable } from '../src/shared/service.js';
 import { list as catalogList, find as catalogFind, sameOrigin } from '../src/shared/catalog.js';
+import { makeProfile, isProfile, mergeProfile } from '../src/shared/profile.js';
 
 const K = { services: 'unichat.services', history: 'unichat.history', theme: 'unichat.theme', lang: 'unichat.lang', retention: 'unichat.retention', workspaces: 'unichat.workspaces' };
 const RETENTION_DAYS = [0, 30, 90, 365];
@@ -261,6 +262,57 @@ export const api = {
       write(K.workspaces, w);
     }
     return w;
+  },
+
+  // --- Profil multi-appareil (services + espaces + réglages + historique) ---
+
+  async exportProfile() {
+    const w = readWorkspaces();
+    return makeProfile({
+      services: read(K.services, []),
+      workspaces: w.list,
+      settings: {
+        theme: await this.getTheme(),
+        language: await this.getLang(),
+        historyRetentionDays: await this.getRetention(),
+      },
+      history: read(K.history, []),
+    });
+  },
+
+  async importProfile(incoming) {
+    const merged = mergeProfile(
+      {
+        services: read(K.services, []),
+        workspaces: readWorkspaces().list,
+        settings: {
+          theme: await this.getTheme(),
+          language: await this.getLang(),
+          historyRetentionDays: await this.getRetention(),
+        },
+        history: read(K.history, []),
+      },
+      incoming
+    );
+    if (!merged) return null;
+    write(K.services, merged.services);
+    const w = readWorkspaces();
+    w.list = merged.workspaces.map((x) => ({
+      id: x.id && x.id.startsWith('ws-') ? x.id : 'ws-' + Math.random().toString(16).slice(2, 10),
+      name: x.name,
+      services: x.services,
+    }));
+    // L'espace actif survit s'il existe encore, sinon retour à 'all'.
+    if (!w.list.some((x) => x.id === w.active)) w.active = 'all';
+    write(K.workspaces, w);
+    for (const [key, value] of Object.entries(merged.settings || {})) {
+      if (key === 'theme') await this.setTheme(value);
+      else if (key === 'language') await this.setLang(value);
+      else if (key === 'historyRetentionDays') await this.setRetention(value);
+      // blockTrackers / hibernateMinutes : desktop uniquement, ignorés ici.
+    }
+    write(K.history, merged.history);
+    return merged.stats;
   },
 
   // --- Métadonnées d'une URL (phase 6 : fetch natif, pas de CORS) ---

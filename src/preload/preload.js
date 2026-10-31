@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('unichat', {
   workspacesDelete: (id) => ipcRenderer.invoke('workspaces-delete', id),
   workspacesToggleService: (wsId, serviceId, member) =>
     ipcRenderer.invoke('workspaces-toggle-service', wsId, serviceId, member),
+  exportProfile: () => ipcRenderer.invoke('export-profile'),
+  importProfile: () => ipcRenderer.invoke('import-profile'),
   getServices: () => ipcRenderer.invoke('get-services'),
   getHistory: () => ipcRenderer.invoke('get-history'),
   removeHistoryEntry: (serviceId, url) => ipcRenderer.invoke('history-remove', serviceId, url),

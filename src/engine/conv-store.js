@@ -201,6 +201,17 @@ function purgeRoot(serviceId, serviceUrl) {
   return n;
 }
 
+// Remplace tout l'historique par le résultat d'une fusion de profil
+// (multi-appareil) : les entrées sont déjà dédoublonnées/remappées par
+// src/shared/profile.js. Renvoie le nombre d'entrées.
+function replaceAll(list) {
+  entries = (Array.isArray(list) ? list : []).filter(
+    (e) => e && typeof e.serviceId === 'string' && typeof e.url === 'string' && typeof e.title === 'string'
+  );
+  saveSoon();
+  return entries.length;
+}
+
 // Rétention : retire les conversations plus anciennes que n jours
 // (réglage « Historique », 0 = illimité). Renvoie le nombre retirées.
 function purgeOlderThan(days) {
@@ -214,4 +225,4 @@ function purgeOlderThan(days) {
   return removed;
 }
 
-module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching, purgeMatchingTitle, purgeRoot, purgeOlderThan };
+module.exports = { init, upsert, listAll, removeService, remove, rename, setPinned, stripTitle, purgeMatching, purgeMatchingTitle, purgeRoot, purgeOlderThan, replaceAll };

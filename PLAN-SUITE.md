@@ -98,6 +98,18 @@ purge d'historique).
   l'écran Chats (l'écran Services montre tout). Pas de mise en veille
   mobile (pas de vues persistantes) ni de synchro desktop ↔ mobile
   (stockages indépendants).
+- **Profil multi-appareil** : `src/shared/profile.js` (schéma v1 : services,
+  workspaces, settings, history — JAMAIS les sessions). Fusion sans
+  écrasement : services par URL (importable), espaces par nom (union),
+  réglages : l'import gagne, historique par (service,url) au plus récent.
+  **PIÈGE des ids** : les ids de services diffèrent entre appareils →
+  `mergeProfile` remappe TOUT serviceId entrant via l'URL vers l'id local.
+  Desktop : IPC export-profile/import-profile (dialogues natifs) →
+  registry.importAll + workspaces.mergeIn + settings setters +
+  convStore.replaceAll ; rechargement du renderer si la langue a changé
+  (elle vit dans le preload). Mobile : api.exportProfile (navigator.share
+  texte, repli presse-papiers) + importProfile ; le sélecteur de fichier
+  détecte profil OU registre simple (isProfile).
 - **Hibernation (desktop, Réglages → Ressources)** : 0 (jamais, défaut) /
   5 / 15 / 30 / 60 min. Veilleuse 30 s dans le main : toute vue ni active,
   ni split, pas affichée depuis plus de X minutes → `hibernateView`

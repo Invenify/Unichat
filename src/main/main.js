@@ -14,6 +14,7 @@ const workspaces = require('./workspaces');
 const convStore = require('../engine/conv-store');
 const titleTracker = require('../engine/title-tracker');
 const { isTrackerUrl } = require('../shared/trackers');
+const profile = require('../shared/profile');
 
 // Sidebar : largeur normale, ou rail d'icônes quand elle est réduite
 // (bouton « ⟨ ⟩ » ou Ctrl/Cmd+B, état persisté dans settings.json).
@@ -399,6 +400,89 @@ ipcMain.handle('workspaces-toggle-service', (_e, wsId, serviceId, member) => {
   const state = workspaces.get();
   syncWorkspaceViews();
   return state;
+});
+
+// --- Profil multi-appareil : services + espaces + réglages + historique ---
+// Les sessions ne se synchronisent pas (sécurité + re-vérification des
+// sites). Fusion sans écrasement, ids remappés par URL.
+
+ipcMain.handle('export-profile', async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Exporter le profil UniChat',
+    defaultPath: 'unichat-profile.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return { ok: false, canceled: true };
+  const data = profile.makeProfile({
+    services: registry.list(),
+    workspaces: workspaces.get().list,
+    settings: settings.get(),
+    history: convStore.listAll(),
+  });
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+  return { ok: true, filePath };
+});
+
+ipcMain.handle('import-profile', async (_e) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, canceled: true };
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Importer un profil UniChat',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  });
+  if (canceled || !filePaths || filePaths.length === 0) return { ok: false, canceled: true };
+  let incoming;
+  try {
+    incoming = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+  const merged = profile.mergeProfile(
+    {
+      services: registry.list(),
+      workspaces: workspaces.get().list,
+      settings: settings.get(),
+      history: convStore.listAll(),
+    },
+    incoming
+  );
+  if (!merged) return { ok: false, error: 'invalid' };
+
+  // Application : nouveaux services, espaces fusionnés, réglages (l'import
+  // gagne — un rechargement du renderer suit si la langue a changé),
+  // historique fusionné.
+  registry.importAll(merged.services);
+  workspaces.mergeIn(merged.workspaces);
+  const before = settings.get();
+  if (merged.settings.theme !== undefined && merged.settings.theme !== before.theme) {
+    nativeTheme.themeSource = merged.settings.theme;
+    settings.setTheme(merged.settings.theme);
+  }
+  if (merged.settings.language !== undefined && merged.settings.language !== before.language) {
+    settings.setLanguage(merged.settings.language);
+  }
+  if (merged.settings.blockTrackers !== undefined && merged.settings.blockTrackers !== before.blockTrackers) {
+    settings.setBlockTrackers(merged.settings.blockTrackers);
+    for (const view of views.values()) applyTrackerBlock(view.webContents.session);
+  }
+  if (merged.settings.historyRetentionDays !== undefined && merged.settings.historyRetentionDays !== before.historyRetentionDays) {
+    settings.setHistoryRetention(merged.settings.historyRetentionDays);
+  }
+  if (merged.settings.hibernateMinutes !== undefined && merged.settings.hibernateMinutes !== before.hibernateMinutes) {
+    settings.setHibernateMinutes(merged.settings.hibernateMinutes);
+  }
+  convStore.replaceAll(merged.history);
+  syncWorkspaceViews();
+  pushServices();
+  pushHistory();
+  const languageChanged = settings.get().language !== before.language;
+  return { ok: true, stats: merged.stats, languageChanged };
 });
 
 // Sidebar réduite (rail d'icônes) : l'état vit ici, layoutViews() en a

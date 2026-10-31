@@ -5,6 +5,7 @@
 import { api, catalogList, sameOrigin } from './api.js';
 import { webviews } from './webviews.js';
 import { t, setLang as setI18nLang, resolveLang, locale as i18nLocale, LANGS } from '../src/shared/i18n.js';
+import { isProfile } from '../src/shared/profile.js';
 
 // Applique la langue courante aux textes statiques du DOM (data-i18n,
 // data-i18n-placeholder, data-i18n-title) et à <html lang>.
@@ -900,13 +901,51 @@ $('#export-registry').addEventListener('click', async () => {
 
 $('#import-registry').addEventListener('click', () => $('#import-file').click());
 
+// --- Profil multi-appareil : export par le partage Android, import via
+// le sélecteur de fichier (détecte profil OU simple registre). ---
+
+$('#profile-export').addEventListener('click', async () => {
+  const data = await api.exportProfile();
+  const json = JSON.stringify(data);
+  // Partage Android (texte — le JSON fait quelques Ko) ; replis :
+  // presse-papiers, puis message d'aide.
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'UniChat — profile.json', text: json });
+      toast(t('profileExported'));
+      return;
+    } catch {
+      // partage annulé : on tente le presse-papiers
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(json);
+    toast(t('profileExported'));
+  } catch {
+    toast(t('mobileRegistryCopied', { n: data.services.length }));
+  }
+});
+
+$('#profile-import').addEventListener('click', () => $('#import-file').click());
+
 $('#import-file').addEventListener('change', async (ev) => {
   const file = ev.target.files[0];
   ev.target.value = '';
   if (!file) return;
   try {
-    const list = JSON.parse(await file.text());
-    const added = await api.importRegistry(list);
+    const parsed = JSON.parse(await file.text());
+    // Profil complet (multi-appareil) ou simple registre : les deux passent.
+    if (isProfile(parsed)) {
+      const stats = await api.importProfile(parsed);
+      if (!stats) {
+        toast(t('profileInvalid'));
+        return;
+      }
+      await reload();
+      toast(t('profileImported', { services: stats.servicesAdded, history: stats.historyMerged }));
+      return;
+    }
+    const added = await api.importRegistry(parsed);
     toast(added > 0 ? t('registryImportAdded', { n: added }) : t('mobileImportNone'));
     await reload();
   } catch {

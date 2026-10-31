@@ -386,6 +386,53 @@ const check = (label, cond) => {
   check('workspaces remove → retour à all', workspaces.get().active === 'all' && workspaces.get().list.length === 0);
   check('workspaces activate id inconnu → all', workspaces.activate('ws-fantome').active === 'all');
 
+  // Profil multi-appareil : fusion sans écrasement + REMAPPAGE des ids
+  // (les ids de services diffèrent entre appareils, l'URL fait le pont).
+  const profileLib = require(path.join(ROOT, 'src/shared/profile'));
+  const localSvc = registry.list().find((s) => s.url === 'https://chat.deepseek.com') || registry.add({ name: 'DeepSeek', url: 'https://chat.deepseek.com', accent: '#4d6bfe' });
+  const incoming = profileLib.makeProfile({
+    services: [
+      // DeepSeek existe déjà localement avec un AUTRE id : rien d'écrasé.
+      { id: 'svc-ETRANGER', name: 'DeepSeek renommé côté import', url: 'https://chat.deepseek.com', accent: '#111111' },
+      // Qwen est nouveau → ajouté.
+      { id: 'svc-QWEN', name: 'Qwen', url: 'https://chat.qwen.ai', accent: '#615ced' },
+    ],
+    workspaces: [{ id: 'ws-etranger', name: 'Espace commun', services: ['svc-ETRANGER', 'svc-QWEN'] }],
+    settings: { theme: 'dark', language: 'en', historyRetentionDays: 90 },
+    history: [
+      // Conversation DeepSeek : serviceId ENTRANT → doit être remappé sur
+      // l'id LOCAL du même service (par URL).
+      { serviceId: 'svc-ETRANGER', url: 'https://chat.deepseek.com/chat/abc', title: 'Chat fusionné', updatedAt: Date.now() },
+    ],
+  });
+  check('profile : isProfile', profileLib.isProfile(incoming) === true);
+  const localBefore = registry.list().length;
+  const merged = profileLib.mergeProfile(
+    {
+      services: registry.list(),
+      workspaces: [],
+      settings: { theme: 'system', language: 'fr', historyRetentionDays: 0 },
+      history: convStore.listAll(),
+    },
+    incoming
+  );
+  check('profile : 1 service ajouté', merged.stats.servicesAdded === 1 && merged.services.length === localBefore + 1);
+  check('profile : service local préservé (nom non écrasé)', merged.services.find((s) => s.url === 'https://chat.deepseek.com').name !== 'DeepSeek renommé côté import');
+  const qwenLocal = merged.services.find((s) => s.url === 'https://chat.qwen.ai');
+  check('profile : Qwen ajouté', !!qwenLocal);
+  const dsLocal = merged.services.find((s) => s.url === 'https://chat.deepseek.com');
+  check('profile : espace fusionné, ids remappés', merged.workspaces[0].services.includes(dsLocal.id) && merged.workspaces[0].services.includes(qwenLocal.id));
+  check('profile : réglages import gagne', merged.settings.theme === 'dark' && merged.settings.language === 'en' && merged.settings.historyRetentionDays === 90);
+  const histEntry = merged.history.find((e) => e.url === 'https://chat.deepseek.com/chat/abc');
+  check('profile : historique remappé sur l\u2019id local', histEntry && histEntry.serviceId === dsLocal.id);
+  check('profile : fichier non-profil → null', profileLib.mergeProfile({ services: [] }, { foo: 1 }) === null);
+  // Application desktop : workspaces.mergeIn + conv-store replaceAll.
+  const wsMerged = workspaces.mergeIn(merged.workspaces);
+  check('workspaces.mergeIn : espace ajouté', wsMerged.list.some((w) => w.name === 'Espace commun'));
+  const histCount = convStore.replaceAll(merged.history);
+  check('conv-store.replaceAll : historique appliqué', histCount === merged.history.length && convStore.listAll().some((e) => e.url === 'https://chat.deepseek.com/chat/abc'));
+  registry.remove(qwenLocal.id);
+
   // i18n : dictionnaire partagé desktop/mobile, 5 langues + interpolation
   check('i18n : 5 langues', i18n.LANGS.length === 5 && i18n.LANGS.every((l) => /^[a-z]{2}$/.test(l.code)));
   i18n.setLang('fr');

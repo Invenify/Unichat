@@ -1465,6 +1465,44 @@ $('#settings-manage').addEventListener('click', () => {
   openCatalog(false);
 });
 
+// --- Profil multi-appareil : export / import (services + espaces +
+// réglages + historique — jamais les sessions) ---
+
+$('#profile-export').addEventListener('click', async () => {
+  const res = await api.exportProfile();
+  if (res.ok) toast(t('profileExported'));
+  else if (!res.canceled) toast(t('wizardImportError', { error: res.error || '…' }));
+});
+
+$('#profile-import').addEventListener('click', async () => {
+  const res = await api.importProfile();
+  if (!res.ok) {
+    if (!res.canceled) toast(res.error === 'invalid' ? t('profileInvalid') : t('wizardImportError', { error: res.error || '…' }));
+    return;
+  }
+  if (res.languageChanged) {
+    // La langue vit dans le preload : seul un rechargement la retraduit.
+    window.location.reload();
+    return;
+  }
+  // Réfection complète de l'état local après fusion.
+  services = await api.getServices();
+  history = await api.getHistory();
+  workspaces = await api.getWorkspaces();
+  appTheme = (await api.getTheme()) || 'system';
+  blockTrackers = (await api.getBlockTrackers()) === true;
+  retentionDays = (await api.getHistoryRetention()) || 0;
+  hibernateMinutes = (await api.getHibernateMinutes()) || 0;
+  updateThemeButton();
+  updateSettingsRows();
+  updateWorkspaceChip();
+  applyI18n();
+  render();
+  toast(
+    t('profileImported', { services: res.stats.servicesAdded, history: res.stats.historyMerged })
+  );
+});
+
 $('#catalog-done').addEventListener('click', closeCatalog);
 $('#catalog-close').addEventListener('click', closeCatalog);
 $('#catalog-overlay').addEventListener('click', (e) => {
