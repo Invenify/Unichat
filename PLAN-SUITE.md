@@ -98,6 +98,19 @@ purge d'historique).
   l'écran Chats (l'écran Services montre tout). Pas de mise en veille
   mobile (pas de vues persistantes) ni de synchro desktop ↔ mobile
   (stockages indépendants).
+- **Build des livrables (depuis Linux)** : AppImage natif. Windows NSIS
+  exige **wine** (electron-builder lance son makensis Windows sous wine) :
+  Bazzite est immuable → wine PORTABLE Kron4ek, build **wow64**
+  (`~/.local/wine/wine-11.20-amd64-wow64/` — la variante amd64 simple
+  échoue sur le NSIS 32 bits : `/lib/ld-linux.so.2` absent d'un OS sans
+  multilib). PATH + `--config.win.signAndEditExecutable=false` (l'édition
+  rcedit de l'exe nécessiterait wine complet). macOS : **zip** arm64
+  possible depuis Linux, DMG impossible (macOS seul) — la release publie
+  donc un zip, comme 0.1.0. Toujours `--publish never` (sinon GH_TOKEN).
+  APK : `./gradlew assembleDebug` — depuis un terminal VSCodium, les
+  warnings cgroup de la JVM polluent la capture de version d'AGP
+  (JdkImageTransform) : lancer depuis un terminal normal ou Android
+  Studio ; JDK 21 dans `~/.jdks/jdk-21.0.13+9`.
 - **Raccourcis global + nouveaux** : `CommandOrControl+Alt+U` enregistré via
   `globalShortcut` au boot (silencieux si déjà pris), `unregisterAll` au
   will-quit ; déclenche showMainWindow + event 'summoned' → palette ouverte
