@@ -107,10 +107,14 @@ purge d'historique).
   rcedit de l'exe nécessiterait wine complet). macOS : **zip** arm64
   possible depuis Linux, DMG impossible (macOS seul) — la release publie
   donc un zip, comme 0.1.0. Toujours `--publish never` (sinon GH_TOKEN).
-  APK : `./gradlew assembleDebug` — depuis un terminal VSCodium, les
-  warnings cgroup de la JVM polluent la capture de version d'AGP
-  (JdkImageTransform) : lancer depuis un terminal normal ou Android
-  Studio ; JDK 21 dans `~/.jdks/jdk-21.0.13+9`.
+  APK : **JDK patché obligatoire sur Bazzite** — la JVM y imprime des
+  avertissements cgroup **sur STDOUT**, ce qui pollue la capture de
+  version d'AGP (JdkImageTransform) et casse `jmod`. Contournement : dans
+  `~/.jdks/jdk-21.0.13+9/bin`, `javac`/`jlink`/`jmod` sont renommés
+  `.bin` et remplacés par des wrappers filtrant `os,container` (un shim
+  extérieur NE MARCHE PAS : AGP résout le JDK via `java.home` du daemon,
+  pas via le PATH). Puis `JAVA_HOME=~/.jdks/jdk-21.0.13+9
+  ./gradlew assembleDebug`.
 - **Raccourcis global + nouveaux** : `CommandOrControl+Alt+U` enregistré via
   `globalShortcut` au boot (silencieux si déjà pris), `unregisterAll` au
   will-quit ; déclenche showMainWindow + event 'summoned' → palette ouverte
